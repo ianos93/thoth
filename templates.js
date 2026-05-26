@@ -244,6 +244,125 @@ const TEMPLATES = [
     },
   },
 
+
+  // ── Hosting Provider Abuse Report ──────────────────────────
+  {
+    id: 'abuse_host',
+    name: 'Hosting Provider Abuse Report',
+    folder: 'Abuse Reports',
+
+    onLoad(fv) {
+      if (!fv.date_observed) fv.date_observed = today();
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'host',         label:'Hosting provider',               type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare…' },
+      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name…' },
+      { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
+      { _divider: true },
+      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/…', sanitize:'url' },
+      { id:'original_domain',  label:"Original domain (client's)", type:'text',       placeholder:'legitimate-brand.com' },
+      { id:'date_observed',    label:'Date observed',              type:'date' },
+      { _divider: true },
+      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse…', hint:'Describe how to access the malicious page.' },
+      { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
+      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics…' },
+      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link…' },
+      { _divider: true },
+      { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
+      { id:'our_case_id',  label:'Case ID',           type:'text', placeholder:'CASE-2024-XXXXX' },
+      { id:'timestamp',    label:'System timestamp',  type:'text', placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
+    ],
+
+    render(v) {
+      const ts    = v.timestamp || nowUtc();
+      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
+      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
+      const phishDomain = v.offending_url
+        ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0]
+        : '[phishing website]';
+      const lines = [];
+      lines.push(`Subject: [URGENT] Phishing website Takedown Request for ${phishDomain}`);
+      lines.push(`
+Dear ${v.host ? v.host + ' Abuse Team' : '[Host Provider] Abuse Team'},`);
+      lines.push(`
+We have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
+      lines.push(`
+As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
+      lines.push(`
+${'─'.repeat(55)}
+ABUSE REPORT & EVIDENCE
+${'─'.repeat(55)}`);
+      lines.push(`Offending URL:     ${us}`);
+      lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
+      lines.push(`Abuse type:        ${abuse}`);
+      lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
+      lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
+      lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
+      if (v.evidence_data) lines.push(`
+Evidence details:
+${v.evidence_data}`);
+      if (v.blocklists?.length) {
+        lines.push(`
+Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:`);
+        v.blocklists.forEach(b => lines.push(`  • ${b}`));
+      } else {
+        lines.push(`
+Please note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]`);
+      }
+      lines.push(`
+Please confirm receipt of this report and inform us of the outcome of your investigation.
+`);
+      lines.push(`Sincerely,
+Abuse Operations
+${v.company_name || '[Company Name]'}`);
+      lines.push(`
+${'─'.repeat(55)}
+INTERNAL REFERENCE`);
+      if (v.client) lines.push(`Client:    ${v.client}`);
+      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
+      lines.push(`Timestamp: ${ts}`);
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const ts    = v.timestamp || nowUtc();
+      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
+      const us    = sanitizeUrl(v.offending_url);
+      const phishDomain = v.offending_url
+        ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0]
+        : null;
+      const lines = [];
+      lines.push(hesc('Subject: [URGENT] Phishing website Takedown Request for ') + fs('offending_url', phishDomain, '[phishing website]'));
+      lines.push('\n' + hesc('Dear ') + fs('host', v.host ? v.host + ' Abuse Team' : null, '[Host Provider] Abuse Team') + hesc(','));
+      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
+      lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
+      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
+      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
+      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
+      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
+      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
+      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
+      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
+      if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
+      if (v.blocklists?.length) {
+        lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:'));
+        v.blocklists.forEach(b => lines.push(hesc('  • ') + fs('blocklists', b)));
+      } else {
+        lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]'));
+      }
+      lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
+      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
+      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
+      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
+      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
+      return lines.join('\n');
+    },
+  },
+
   // ── Formal Report ───────────────────────────────────────────
   {
     id: 'formal_report',
