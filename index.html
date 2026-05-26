@@ -351,6 +351,88 @@ function showToast(msg,dur=2500){
 }
 
 // ═══════════════════════════════════════════════
+// PROFILE
+// ═══════════════════════════════════════════════
+const getProfile=()=>{try{return JSON.parse(localStorage.getItem('to_profile')||'{}');}catch{return{};}};
+const saveProfileData=p=>localStorage.setItem('to_profile',JSON.stringify(p));
+function loadProfileUI(){
+  const p=getProfile();
+  document.getElementById('pf-company').value=p.company||'';
+  document.getElementById('pf-name').value=p.name||'';
+  document.getElementById('pf-email').value=p.email||'';
+  document.getElementById('pf-role').value=p.role||'';
+  document.getElementById('pf-dept').value=p.dept||'';
+}
+document.getElementById('btn-save-profile').addEventListener('click',()=>{
+  saveProfileData({
+    company:document.getElementById('pf-company').value.trim(),
+    name:document.getElementById('pf-name').value.trim(),
+    email:document.getElementById('pf-email').value.trim(),
+    role:document.getElementById('pf-role').value.trim(),
+    dept:document.getElementById('pf-dept').value.trim(),
+  });
+  showToast('Profile saved.');
+});
+
+// ═══════════════════════════════════════════════
+// SAVED LISTS
+// ═══════════════════════════════════════════════
+const LIST_KEYS={registrars:'to_list_v2_registrars',hosts:'to_list_v2_hosts',clients:'to_list_v2_clients'};
+const getList=k=>{try{return JSON.parse(localStorage.getItem(LIST_KEYS[k])||'[]');}catch{return[];}};
+const saveList=(k,a)=>localStorage.setItem(LIST_KEYS[k],JSON.stringify(a));
+function addEntry(k,v){
+  const val=v.trim(); if(!val) return false;
+  const list=getList(k);
+  if(list.map(e=>e.toLowerCase()).includes(val.toLowerCase())) return false;
+  list.push(val); saveList(k,list); return true;
+}
+const removeEntry=(k,v)=>saveList(k,getList(k).filter(e=>e!==v));
+
+// ═══════════════════════════════════════════════
+// USER TEMPLATES + FOLDERS
+// ═══════════════════════════════════════════════
+const getUserTemplates=()=>{try{return JSON.parse(localStorage.getItem('to_user_templates')||'[]');}catch{return[];}};
+const saveUserTemplates=a=>localStorage.setItem('to_user_templates',JSON.stringify(a));
+const getUserFolders=()=>{try{return JSON.parse(localStorage.getItem('to_user_folders')||'[]');}catch{return[];}};
+const saveUserFolders=a=>localStorage.setItem('to_user_folders',JSON.stringify(a));
+
+// ═══════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const data={version:4,exported:new Date().toISOString(),
+    profile:getProfile(),
+    lists:{registrars:getList('registrars'),hosts:getList('hosts'),clients:getList('clients')},
+    userTemplates:getUserTemplates(),userFolders:getUserFolders(),
+    drafts:getDrafts()};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a'); a.href=url; a.download='template-organizer-save.json'; a.click();
+  URL.revokeObjectURL(url); showToast('Save file exported.');
+});
+document.getElementById('import-file').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.version||!d.lists) throw new Error('invalid');
+      if(d.lists.registrars) saveList('registrars',d.lists.registrars);
+      if(d.lists.hosts) saveList('hosts',d.lists.hosts);
+      if(d.lists.clients) saveList('clients',d.lists.clients);
+      if(d.userTemplates) saveUserTemplates(d.userTemplates);
+      if(d.userFolders) saveUserFolders(d.userFolders);
+      if(d.drafts) saveDrafts(d.drafts);
+      if(d.profile){saveProfileData(d.profile);loadProfileUI();}
+      renderAllListEntries(); renderDrafts(); renderTree();
+      showToast('Save file imported.');
+    }catch{showToast('Error: could not read save file.');}
+    e.target.value='';
+  };
+  r.readAsText(file);
+});
+
+
+// ═══════════════════════════════════════════════
 // PANEL SYSTEM
 // ═══════════════════════════════════════════════
 let activePanel=null;
