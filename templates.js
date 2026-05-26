@@ -1,9 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // templates.js — built-in template definitions
-// Place this file in the same folder as template-organizer.html
+// Place this file in the same folder as index.html
 // ═══════════════════════════════════════════════════════════════
 
-// ── Shared utilities ─────────────────────────────────────────
 const today  = () => new Date().toISOString().slice(0, 10);
 const nowUtc = () => new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 
@@ -19,40 +18,32 @@ function sanitizeDomain(raw) {
   return raw.replace(/^https?:\/\//i, '').replace(/\./g, '[.]');
 }
 
-// ── HTML helpers (used by renderHtml methods) ─────────────────
-// hesc: escape a plain string for safe insertion into HTML
 function hesc(s) {
   return String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// fs: wrap a filled field value in a clickable span
-// Returns plain hesc'd text if empty (no span = not clickable)
-function fs(id, text) {
-  if (!text && text !== 0) return '';
-  return `<span class="out-field" data-field="${id}">${hesc(text)}</span>`;
+// Always wraps — passes placeholder if value is empty so the span is always rendered
+function fs(id, value, placeholder) {
+  const display = value || placeholder || '';
+  if (!display) return '';
+  return `<span class="out-field" data-field="${id}">${hesc(display)}</span>`;
 }
 
-// line: escape a whole line of static text for innerHTML output
-// Field values inside lines must be pre-wrapped with fs() before calling hesc on surrounding text
-// Helper: builds a line mixing static text (auto-escaped) and pre-built field spans
-// Usage: hl`Dear ${fs('reg', v.reg)} Abuse Team,`
 function hl(strings, ...values) {
   return strings.map((s, i) => hesc(s) + (values[i] !== undefined ? values[i] : '')).join('');
 }
 
-// ── Abuse type map ────────────────────────────────────────────
 const ABUSE_MAP = {
-  'Phishing':           'phishing',
+  'Phishing':            'phishing',
   'Malware Distribution':'malware distribution',
-  'Spam':               'spam',
-  'Brand Impersonation':'brand impersonation',
-  'Scam':               'scams',
-  'Other':              'malicious activities',
+  'Spam':                'spam',
+  'Brand Impersonation': 'brand impersonation',
+  'Scam':                'scams',
+  'Other':               'malicious activities',
 };
 
-// ── Default hosting providers ─────────────────────────────────
 const DEFAULT_HOSTS = [
   'Amazon Web Services (AWS)','Cloudflare','Google Cloud','Microsoft Azure',
   'DigitalOcean','Linode / Akamai','Vultr','Hetzner','OVHcloud','Fastly',
@@ -63,17 +54,6 @@ const DEFAULT_HOSTS = [
   'Frantech Solutions','Sharktech','Psychz Networks','QuadraNet','Zare',
   'M247','Serverius','Datacamp Limited','Combahton','Blazingfast',
 ];
-
-// ── Built-in templates ────────────────────────────────────────
-// Each template has:
-//   id, name, folder, fields[]
-//   onLoad(fv)          — called when template loads, sets defaults
-//   render(v)           — returns plain text (used for copy)
-//   renderHtml(v)       — returns HTML with clickable spans (used for display)
-//
-// Fields: { id, label, type, placeholder?, hint?, sanitize?, profileKey?, listKey?, options[] }
-// Types:  text | email | date | textarea | list | select | listpicker
-// _divider: true        — renders a horizontal rule between field groups
 
 const TEMPLATES = [
 
@@ -112,15 +92,15 @@ const TEMPLATES = [
     render(v) {
       const ts    = v.timestamp || nowUtc();
       const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const ds    = sanitizeDomain(v.offending_domain);
-      const us    = sanitizeUrl(v.offending_url);
+      const ds    = sanitizeDomain(v.offending_domain) || '[offending domain]';
+      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
       const lines = [];
       lines.push(`Dear ${v.registrar ? v.registrar + ' Abuse Team' : '[Registrar] Abuse Team'},`);
       lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
       lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
       lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
-      lines.push(`Offending domain:  ${ds || '[offending domain]'}`);
-      lines.push(`Offending URL:     ${us || '[offending URL]'}`);
+      lines.push(`Offending domain:  ${ds}`);
+      lines.push(`Offending URL:     ${us}`);
       lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
       lines.push(`Abuse type:        ${abuse}`);
       lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
@@ -140,21 +120,21 @@ const TEMPLATES = [
 
     renderHtml(v) {
       const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
+      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
       const ds    = sanitizeDomain(v.offending_domain);
       const us    = sanitizeUrl(v.offending_url);
       const lines = [];
-      lines.push(hl`Dear ${v.registrar ? fs('registrar', v.registrar) + hesc(' Abuse Team') : '[Registrar] Abuse Team'},`);
-      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse) + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
+      lines.push(hesc('Dear ') + fs('registrar', v.registrar ? v.registrar + ' Abuse Team' : null, '[Registrar] Abuse Team') + hesc(','));
+      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
       lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Offending domain:  ') + (ds ? fs('offending_domain', ds) : hesc('[offending domain]')));
-      lines.push(hesc('Offending URL:     ') + (us ? fs('offending_url', us) : hesc('[offending URL]')));
-      lines.push(hesc('Original domain:   ') + (v.original_domain ? fs('original_domain', v.original_domain) : hesc('[original domain]')));
-      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse));
-      lines.push(hesc('Date observed:     ') + (v.date_observed ? fs('date_observed', v.date_observed) : hesc('[date]')));
-      lines.push(hesc('Access:            ') + (v.access_instructions ? fs('access_instructions', v.access_instructions) : hesc('[access instructions]')));
-      lines.push(hesc('Evidence format:   ') + (v.evidence_format ? fs('evidence_format', v.evidence_format) : hesc('[evidence format]')));
+      lines.push(hesc('Offending domain:  ') + fs('offending_domain', ds, '[offending domain]'));
+      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
+      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
+      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
+      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
+      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
+      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
       if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
       if (v.blocklists?.length) {
         lines.push('\n' + hesc('Flagged by the following blocklists:'));
@@ -162,10 +142,10 @@ const TEMPLATES = [
       }
       lines.push('\n' + hesc('─'.repeat(55)));
       lines.push(hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
-      lines.push(hesc('Sincerely,\nAbuse Operations\n') + (v.company_name ? fs('company_name', v.company_name) : hesc('[Company Name]')));
+      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
       if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + (v.our_case_id ? fs('our_case_id', v.our_case_id) : hesc('[Case ID]')));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
       lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
       return lines.join('\n');
     },
@@ -206,16 +186,16 @@ const TEMPLATES = [
     render(v) {
       const ts    = v.timestamp || nowUtc();
       const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const ds    = sanitizeDomain(v.offending_domain);
-      const us    = sanitizeUrl(v.offending_url);
+      const ds    = sanitizeDomain(v.offending_domain) || '[offending domain]';
+      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
       const base  = (v.offending_domain || '[domain]').replace(/^https?:\/\//i, '');
       const lines = [];
       lines.push(`Subject: [FOLLOW UP] ${abuse} - ${base} - Ref: ${v.their_case_id || '[their case ID]'}`);
       lines.push(`\nTo the Abuse Department,`);
       lines.push(`\nThis is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.`);
       lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
-      lines.push(`Offending URL:     ${us || '[offending URL]'}`);
-      lines.push(`Offending domain:  ${ds || '[offending domain]'}`);
+      lines.push(`Offending URL:     ${us}`);
+      lines.push(`Offending domain:  ${ds}`);
       lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
       lines.push(`Abuse type:        ${abuse}`);
       lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
@@ -235,30 +215,30 @@ const TEMPLATES = [
 
     renderHtml(v) {
       const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
+      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
       const ds    = sanitizeDomain(v.offending_domain);
       const us    = sanitizeUrl(v.offending_url);
-      const base  = (v.offending_domain || '[domain]').replace(/^https?:\/\//i, '');
+      const base  = (v.offending_domain || '').replace(/^https?:\/\//i, '');
       const lines = [];
-      lines.push(hesc('Subject: [FOLLOW UP] ') + fs('abuse_type', abuse) + hesc(' - ') + hesc(base) + hesc(' - Ref: ') + (v.their_case_id ? fs('their_case_id', v.their_case_id) : hesc('[their case ID]')));
+      lines.push(hesc('Subject: [FOLLOW UP] ') + fs('abuse_type', abuse, '[abuse type]') + hesc(' - ') + fs('offending_domain', base, '[domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
       lines.push('\n' + hesc('To the Abuse Department,'));
       lines.push('\n' + hesc('This is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Offending URL:     ') + (us ? fs('offending_url', us) : hesc('[offending URL]')));
-      lines.push(hesc('Offending domain:  ') + (ds ? fs('offending_domain', ds) : hesc('[offending domain]')));
-      lines.push(hesc('Original domain:   ') + (v.original_domain ? fs('original_domain', v.original_domain) : hesc('[original domain]')));
-      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse));
-      lines.push(hesc('Date observed:     ') + (v.date_observed ? fs('date_observed', v.date_observed) : hesc('[date]')));
-      lines.push(hesc('Assigned ticket:   ') + (v.their_case_id ? fs('their_case_id', v.their_case_id) : hesc('[ticket ID]')));
-      lines.push(hesc('Access:            ') + (v.access_instructions ? fs('access_instructions', v.access_instructions) : hesc('[access instructions]')));
-      lines.push(hesc('Evidence format:   ') + (v.evidence_format ? fs('evidence_format', v.evidence_format) : hesc('[evidence format]')));
+      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
+      lines.push(hesc('Offending domain:  ') + fs('offending_domain', ds, '[offending domain]'));
+      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
+      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
+      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
+      lines.push(hesc('Assigned ticket:   ') + fs('their_case_id', v.their_case_id, '[ticket ID]'));
+      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
+      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
       if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
       lines.push('\n' + hesc('─'.repeat(55)));
       lines.push(hesc('If you require additional evidence to proceed with mitigation, please let us know.\n'));
-      lines.push(hesc('Sincerely,\nAbuse Operations\n') + (v.company_name ? fs('company_name', v.company_name) : hesc('[Company Name]')));
+      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
       if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + (v.our_case_id ? fs('our_case_id', v.our_case_id) : hesc('[Case ID]')));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
       lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
       return lines.join('\n');
     },
@@ -271,16 +251,16 @@ const TEMPLATES = [
     folder: 'General',
 
     fields: [
-      { id:'title',            label:'Report title',      type:'text',     placeholder:'Q3 Performance Review' },
-      { id:'date',             label:'Date',              type:'date' },
-      { id:'author',           label:'Prepared by',       type:'text',     placeholder:'Name / Department', profileKey:'name' },
-      { id:'addressed',        label:'Addressed to',      type:'text',     placeholder:'Name / Department' },
-      { id:'subject',          label:'Subject',           type:'text',     placeholder:'Summary in one line' },
+      { id:'title',           label:'Report title',      type:'text',     placeholder:'Q3 Performance Review' },
+      { id:'date',            label:'Date',              type:'date' },
+      { id:'author',          label:'Prepared by',       type:'text',     placeholder:'Name / Department', profileKey:'name' },
+      { id:'addressed',       label:'Addressed to',      type:'text',     placeholder:'Name / Department' },
+      { id:'subject',         label:'Subject',           type:'text',     placeholder:'Summary in one line' },
       { _divider: true },
-      { id:'summary',          label:'Executive summary', type:'textarea', placeholder:'Brief overview…' },
-      { id:'body',             label:'Main content',      type:'textarea', placeholder:'Detailed analysis…' },
-      { id:'conclusions',      label:'Conclusions',       type:'textarea', placeholder:'Key takeaways…' },
-      { id:'recommendations',  label:'Recommendations',   type:'textarea', placeholder:'Next steps…' },
+      { id:'summary',         label:'Executive summary', type:'textarea', placeholder:'Brief overview…' },
+      { id:'body',            label:'Main content',      type:'textarea', placeholder:'Detailed analysis…' },
+      { id:'conclusions',     label:'Conclusions',       type:'textarea', placeholder:'Key takeaways…' },
+      { id:'recommendations', label:'Recommendations',   type:'textarea', placeholder:'Next steps…' },
     ],
 
     render(v) {
@@ -291,20 +271,20 @@ const TEMPLATES = [
       lines.push(`To:     ${v.addressed || '[Recipient]'}`);
       lines.push(`Re:     ${v.subject || '[Subject]'}`);
       lines.push('─'.repeat(50));
-      if (v.summary)        lines.push(`\nEXECUTIVE SUMMARY\n\n${v.summary}`);
-      if (v.body)           lines.push(`\nDETAILS\n\n${v.body}`);
-      if (v.conclusions)    lines.push(`\nCONCLUSIONS\n\n${v.conclusions}`);
-      if (v.recommendations)lines.push(`\nRECOMMENDATIONS\n\n${v.recommendations}`);
+      if (v.summary)         lines.push(`\nEXECUTIVE SUMMARY\n\n${v.summary}`);
+      if (v.body)            lines.push(`\nDETAILS\n\n${v.body}`);
+      if (v.conclusions)     lines.push(`\nCONCLUSIONS\n\n${v.conclusions}`);
+      if (v.recommendations) lines.push(`\nRECOMMENDATIONS\n\n${v.recommendations}`);
       return lines.join('\n');
     },
 
     renderHtml(v) {
       const lines = [];
-      lines.push(hesc('REPORT: ') + (v.title ? fs('title', v.title) : hesc('[Title]')));
-      lines.push(hesc('Date:   ') + (v.date ? fs('date', v.date) : hesc('[Date]')));
-      lines.push(hesc('From:   ') + (v.author ? fs('author', v.author) : hesc('[Author]')));
-      lines.push(hesc('To:     ') + (v.addressed ? fs('addressed', v.addressed) : hesc('[Recipient]')));
-      lines.push(hesc('Re:     ') + (v.subject ? fs('subject', v.subject) : hesc('[Subject]')));
+      lines.push(hesc('REPORT: ') + fs('title', v.title, '[Title]'));
+      lines.push(hesc('Date:   ') + fs('date', v.date, '[Date]'));
+      lines.push(hesc('From:   ') + fs('author', v.author, '[Author]'));
+      lines.push(hesc('To:     ') + fs('addressed', v.addressed, '[Recipient]'));
+      lines.push(hesc('Re:     ') + fs('subject', v.subject, '[Subject]'));
       lines.push(hesc('─'.repeat(50)));
       if (v.summary)         lines.push('\n' + hesc('EXECUTIVE SUMMARY\n\n') + fs('summary', v.summary));
       if (v.body)            lines.push('\n' + hesc('DETAILS\n\n') + fs('body', v.body));
@@ -344,13 +324,13 @@ const TEMPLATES = [
 
     renderHtml(v) {
       const lines = [];
-      lines.push(hesc('To:      ') + (v.to ? fs('to', v.to) : hesc('[Recipient]')));
+      lines.push(hesc('To:      ') + fs('to', v.to, '[Recipient]'));
       if (v.cc) lines.push(hesc('CC:      ') + fs('cc', v.cc));
-      lines.push(hesc('From:    ') + (v.from ? fs('from', v.from) : hesc('[Sender]')));
-      lines.push(hesc('Subject: ') + (v.subject ? fs('subject', v.subject) : hesc('[Subject]')));
-      lines.push(hesc('Date:    ') + (v.date ? fs('date', v.date) : hesc('[Date]')));
+      lines.push(hesc('From:    ') + fs('from', v.from, '[Sender]'));
+      lines.push(hesc('Subject: ') + fs('subject', v.subject, '[Subject]'));
+      lines.push(hesc('Date:    ') + fs('date', v.date, '[Date]'));
       lines.push(hesc('─'.repeat(50)));
-      lines.push('\n' + (v.body ? fs('body', v.body) : hesc('[Body]')));
+      lines.push('\n' + fs('body', v.body, '[Body]'));
       return lines.join('\n');
     },
   },
@@ -394,10 +374,10 @@ const TEMPLATES = [
     renderHtml(v) {
       const lines = [];
       lines.push(hesc('MEETING MINUTES\n') + hesc('─'.repeat(50)));
-      lines.push(hesc('Meeting:     ') + (v.meeting ? fs('meeting', v.meeting) : hesc('[Meeting name]')));
-      lines.push(hesc('Date:        ') + (v.date ? fs('date', v.date) : hesc('[Date]')));
-      lines.push(hesc('Location:    ') + (v.location ? fs('location', v.location) : hesc('[Location]')));
-      lines.push(hesc('Facilitator: ') + (v.facilitator ? fs('facilitator', v.facilitator) : hesc('[Facilitator]')));
+      lines.push(hesc('Meeting:     ') + fs('meeting', v.meeting, '[Meeting name]'));
+      lines.push(hesc('Date:        ') + fs('date', v.date, '[Date]'));
+      lines.push(hesc('Location:    ') + fs('location', v.location, '[Location]'));
+      lines.push(hesc('Facilitator: ') + fs('facilitator', v.facilitator, '[Facilitator]'));
       if (v.attendees?.length)  lines.push('\n' + hesc('ATTENDEES\n') + v.attendees.map(a => hesc('  • ') + fs('attendees', a)).join('\n'));
       if (v.agenda?.length)     lines.push('\n' + hesc('AGENDA\n') + v.agenda.map((a,i) => hesc(`  ${i+1}. `) + fs('agenda', a)).join('\n'));
       if (v.notes)              lines.push('\n' + hesc('NOTES\n\n') + fs('notes', v.notes));
