@@ -509,4 +509,98 @@ INTERNAL REFERENCE`);
 
 ];
 
+  // ── Trademark Infringement Notice ──────────────────────────
+  {
+    id: 'trademark_infringement',
+    name: 'Trademark Infringement Notice',
+    folder: 'Legal Notices',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'host',             label:'Host / provider',             type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare…' },
+      { id:'client',           label:'Client',                      type:'listpicker', listKey:'clients',  placeholder:'Client name…' },
+      { _divider: true },
+      { id:'infringing_url',   label:'Infringing website URL',      type:'text',       placeholder:'https://infringing-site.com' },
+      { id:'client_url',       label:"Client's original website",   type:'text',       placeholder:'https://client-brand.com' },
+      { _divider: true },
+      { id:'jurisdiction',     label:'Trademark jurisdiction',      type:'text',       placeholder:'e.g. United States, European Union…' },
+      { id:'trademark_number', label:'Trademark registration no.',  type:'text',       placeholder:'e.g. US123456789' },
+      { id:'infringement_desc',label:'What was infringed',          type:'textarea',   placeholder:'e.g. logo and name to provide a similar product in the same market as our client / content from our client's website', hint:'Describe specifically what the infringer copied or misused.' },
+      { _divider: true },
+      { id:'company_name',     label:'Your company name',           type:'text',       placeholder:'Acme Legal Inc.', profileKey:'company' },
+      { id:'our_case_id',      label:'Case ID',                     type:'text',       placeholder:'CASE-2024-XXXXX' },
+      { id:'timestamp',        label:'System timestamp',            type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
+    ],
+
+    render(v) {
+      const ts     = v.timestamp || nowUtc();
+      const client = v.client || '[client]';
+      const host   = v.host || '[Host name]';
+      const lines  = [];
+      lines.push(`Subject: Trademark infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`
+Dear ${host},`);
+      lines.push(`
+We act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks. We request your cooperation to have the infringing content removed.`);
+      lines.push(`
+The infringing material is found at: ${v.infringing_url || '[infringing website URL]'}`);
+      lines.push(`And the original material of our client is at: ${v.client_url || "[client's website URL]"}`);
+      lines.push(`
+${client} owns a ${v.jurisdiction || '[country jurisdiction]'} registered trademark under registration number: ${v.trademark_number || '[trademark number]'}. See attached proof of registration.`);
+      lines.push(`
+The infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
+      lines.push(`
+We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.`);
+      lines.push(`
+Regards,
+${v.company_name || '[Company Name]'}`);
+      lines.push(`
+${'─'.repeat(55)}
+INTERNAL REFERENCE`);
+      if (v.client) lines.push(`Client:    ${v.client}`);
+      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
+      lines.push(`Timestamp: ${ts}`);
+      return lines.join('
+');
+    },
+
+    renderHtml(v) {
+      const ts     = v.timestamp || nowUtc();
+      const client = v.client || '[client]';
+      const clientSpan = fs('client', v.client, '[client]');
+      const hostSpan   = fs('host', v.host, '[Host name]');
+      const lines  = [];
+      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push('
+' + hesc('Dear ') + hostSpan + hesc(','));
+      lines.push('
+' + hesc('We act on behalf of our client, ') + clientSpan + hesc('. It has come to our attention that a website your company hosts may be infringing on one of ') + clientSpan + hesc("'s trademarks. We request your cooperation to have the infringing content removed."));
+      lines.push('
+' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website URL]'));
+      lines.push(hesc("And the original material of our client is at: ") + fs('client_url', v.client_url, "[client's website URL]"));
+      lines.push('
+' + clientSpan + hesc(' owns a ') + fs('jurisdiction', v.jurisdiction, '[country jurisdiction]') + hesc(' registered trademark under registration number: ') + fs('trademark_number', v.trademark_number, '[trademark number]') + hesc('. See attached proof of registration.'));
+      lines.push('
+' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(', creating confusion for ') + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
+      lines.push('
+' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.'));
+      lines.push('
+' + hesc('Regards,
+') + fs('company_name', v.company_name, '[Company Name]'));
+      lines.push('
+' + hesc('─'.repeat(55)) + '
+' + hesc('INTERNAL REFERENCE'));
+      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
+      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
+      return lines.join('
+');
+    },
+  },
+
+
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
