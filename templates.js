@@ -678,6 +678,91 @@ const TEMPLATES = [
     },
   },
 
+  // ── Email Phishing Domain Takedown ──────────────────────────
+  {
+    id: 'email_phishing_takedown',
+    name: 'Email Phishing Domain Takedown',
+    folder: 'Abuse Reports',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'host',             label:'Hosting provider',               type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare\u2026' },
+      { id:'client',           label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name\u2026' },
+      { id:'abuse_type',       label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
+      { _divider: true },
+      { id:'offending_url',    label:'Phishing website URL',           type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
+      { id:'ip_address',       label:'IP address of domain',           type:'text',       placeholder:'e.g. 192.168.1.1' },
+      { id:'phishing_email',   label:'Phisher’s email address',        type:'email',      placeholder:'attacker@malicious-domain.com' },
+      { id:'original_domain',  label:'Legitimate domain impersonated', type:'text',       placeholder:'legitimate-brand.com' },
+      { _divider: true },
+      { id:'email_description',label:'Email behavior description',     type:'textarea',   placeholder:'e.g. inducing clients to download malware...', hint:'What is the email asking users to do?' },
+      { _divider: true },
+      { id:'company_name',     label:'Your company name',              type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' },
+      { id:'our_case_id',      label:'Case ID',                        type:'text',       placeholder:'CASE-2024-XXXXX' },
+      { id:'timestamp',        label:'System timestamp',               type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
+    ],
+
+    render(v) {
+      const ts      = v.timestamp || nowUtc();
+      const abuse   = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
+      const host    = v.host || '[Host Provider]';
+      const us      = sanitizeUrl(v.offending_url) || '[phishing website]';
+      const client  = v.client || '[client]';
+      const defDesc = `[inducing clients to download malware / encouraging users to share their passwords and private information / falsely representing themselves to be ${client}]`;
+      const lines   = [];
+      lines.push(`Subject: [URGENT] Phishing Domain Takedown Request for ${us}`);
+      lines.push(`\nDear ${host} Abuse Team`);
+      lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
+      lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
+      lines.push(`\nThe phishing domain is found at: ${us}`);
+      lines.push(`IP address of phishing domain: ${v.ip_address || '[IP address]'}`);
+      lines.push(`Phisher’s email address: ${v.phishing_email || '[phishing email address]'}`);
+      lines.push(`Legitimate domain being impersonated: ${v.original_domain || '[original domain]'}`);
+      lines.push(`\nIn support of this claim, please find the relevant phishing email headers attached.`);
+      lines.push(`\nThe emails are ${v.email_description || defDesc}. Our client is not related to nor does it have any affiliation to the phishers.`);
+      lines.push(`\nGiven the severity of harm caused, we request your urgent assistance to have the malicious site shut down.`);
+      lines.push(`\nPlease confirm receipt of this report and inform us of the outcome of your investigation.`);
+      lines.push(`\nSincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
+      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
+      if (v.client) lines.push(`Client:    ${v.client}`);
+      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
+      lines.push(`Timestamp: ${ts}`);
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const ts         = v.timestamp || nowUtc();
+      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type;
+      const hostSpan   = fs('host', v.host, '[Host Provider]');
+      const us         = sanitizeUrl(v.offending_url);
+      const client     = v.client || '[client]';
+      const defDesc    = `[inducing clients to download malware / encouraging users to share their passwords and private information / falsely representing themselves to be ${client}]`;
+      const lines      = [];
+      lines.push(hesc('Subject: [URGENT] Phishing Domain Takedown Request for ') + fs('offending_url', us, '[phishing website]'));
+      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(' Abuse Team'));
+      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
+      lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
+      lines.push('\n' + hesc('The phishing domain is found at: ') + fs('offending_url', us, '[phishing URL]'));
+      lines.push(hesc('IP address of phishing domain: ') + fs('ip_address', v.ip_address, '[IP address]'));
+      lines.push(hesc('Phisher’s email address: ') + fs('phishing_email', v.phishing_email, '[phishing email address]'));
+      lines.push(hesc('Legitimate domain being impersonated: ') + fs('original_domain', v.original_domain, '[original domain]'));
+      lines.push('\n' + hesc('In support of this claim, please find the relevant phishing email headers attached.'));
+      lines.push('\n' + hesc('The emails are ') + fs('email_description', v.email_description, defDesc) + hesc('. Our client is not related to nor does it have any affiliation to the phishers.'));
+      lines.push('\n' + hesc('Given the severity of harm caused, we request your urgent assistance to have the malicious site shut down.'));
+      lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.'));
+      lines.push('\n' + hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
+      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
+      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
+      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
+      return lines.join('\n');
+    },
+  },
+
 ];
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
