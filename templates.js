@@ -817,6 +817,115 @@ const TEMPLATES = [
     },
   },
 
+  // ── Client Clarification Request ─────────────────────────────
+  {
+    id: 'client_clarification',
+    name: 'Client Clarification Request',
+    folder: 'Client Communications',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.your_name && p.name) fv.your_name = p.name;
+    },
+
+    fields: [
+      { id:'client_contact',   label:'Client contact name',    type:'text',       placeholder:'e.g. John' },
+      { id:'offending_domain', label:'Incident domain',        type:'text',       placeholder:'malicious-domain.com', sanitize:'domain' },
+      { id:'observation',      label:'What you observed',      type:'textarea',   placeholder:'e.g. the hosting service has been suspended...', hint:'Explain what looks different on your end.' },
+      { _divider: true },
+      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' }
+    ],
+
+    render(v) {
+      const contact = v.client_contact || '[name of client]';
+      const ds      = sanitizeDomain(v.offending_domain) || '[incident domain]';
+      const obs     = v.observation || '[the hosting service has been suspended / insert whatever stuff you saw upon investigation]';
+      const lines   = [];
+      
+      lines.push(`Subject: Clarification required regarding incident: ${ds}`);
+      lines.push(`\nHello ${contact}!`);
+      lines.push(`\nI'm working on your incident ${ds} and it seems like ${obs}. This is what I have on my side:`);
+      lines.push(`\n[insert screenshot]`);
+      lines.push(`\nPlease confirm if you can still see it on your end.`);
+      lines.push(`\nKind regards,\n${v.your_name || '[Your Name]'}`);
+      
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const contact = fs('client_contact', v.client_contact, '[name of client]');
+      const ds      = sanitizeDomain(v.offending_domain);
+      const obs     = fs('observation', v.observation, '[the hosting service has been suspended / insert whatever stuff you saw upon investigation]');
+      const lines   = [];
+      
+      lines.push(hesc('Subject: Clarification required regarding incident: ') + fs('offending_domain', ds, '[incident domain]'));
+      lines.push('\n' + hesc('Hello ') + contact + hesc('!'));
+      lines.push('\n' + hesc("I'm working on your incident ") + fs('offending_domain', ds, '[incident domain]') + hesc(' and it seems like ') + obs + hesc('. This is what I have on my side:'));
+      lines.push('\n' + hesc('[insert screenshot]'));
+      lines.push('\n' + hesc('Please confirm if you can still see it on your end.'));
+      lines.push('\n' + hesc('Kind regards,\n') + fs('your_name', v.your_name, '[Your Name]'));
+      
+      return lines.join('\n');
+    },
+  },
+
+  // ── Request Email Headers ───────────────────────────────────
+  {
+    id: 'client_email_headers',
+    name: 'Request Email Headers',
+    folder: 'Client Communications',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.your_name && p.name) fv.your_name = p.name;
+      if (!fv.department && p.dept) fv.department = p.dept;
+    },
+
+    fields: [
+      { id:'client_contact',   label:'Client contact name',    type:'text',       placeholder:'e.g. John' },
+      { id:'offending_domain', label:'Incident domain',        type:'text',       placeholder:'malicious-domain.com', sanitize:'domain', hint:'Used for the subject line.' },
+      { _divider: true },
+      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Deon', profileKey:'name' },
+      { id:'department',       label:'Your department',        type:'text',       placeholder:'Phishfort Operations Team', profileKey:'dept' }
+    ],
+
+    render(v) {
+      const contact = v.client_contact || '[Client Correspondent]';
+      const name    = v.your_name || '[Your Name]';
+      const dept    = v.department || '[Your Department]';
+      const ds      = sanitizeDomain(v.offending_domain) || '[incident domain]';
+      const lines   = [];
+      
+      lines.push(`Subject: Action Required: Email headers needed for incident ${ds}`);
+      lines.push(`\nHi ${contact},`);
+      lines.push(`\nMy name is ${name}. I'm with the ${dept}, I'm the analyst handling your case. We got the email extracts and the phishing domain used in the attack. Thank you for the evidence. However, to build a stronger case we will need the email headers for that email exchange you provided.`);
+      lines.push(`\nThe headers provide the exact evidence we need to trace the path that the email took from sender to their target(s), along with the IP addresses and/or domains included in the attack.`);
+      lines.push(`\nIf you need help with how to get the headers please let me know and I will be happy to guide you through that.`);
+      lines.push(`\nPlease feel free to reach out if you need any clarity.`);
+      lines.push(`\nKind regards,\n${name}`);
+      
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const contact = fs('client_contact', v.client_contact, '[Client Correspondent]');
+      const name    = fs('your_name', v.your_name, '[Your Name]');
+      const dept    = fs('department', v.department, '[Your Department]');
+      const ds      = sanitizeDomain(v.offending_domain);
+      const lines   = [];
+      
+      lines.push(hesc('Subject: Action Required: Email headers needed for incident ') + fs('offending_domain', ds, '[incident domain]'));
+      lines.push('\n' + hesc('Hi ') + contact + hesc(','));
+      lines.push('\n' + hesc('My name is ') + name + hesc(". I'm with the ") + dept + hesc(", I'm the analyst handling your case. We got the email extracts and the phishing domain used in the attack. Thank you for the evidence. However, to build a stronger case we will need the email headers for that email exchange you provided."));
+      lines.push('\n' + hesc('The headers provide the exact evidence we need to trace the path that the email took from sender to their target(s), along with the IP addresses and/or domains included in the attack.'));
+      lines.push('\n' + hesc('If you need help with how to get the headers please let me know and I will be happy to guide you through that.'));
+      lines.push('\n' + hesc('Please feel free to reach out if you need any clarity.'));
+      lines.push('\n' + hesc('Kind regards,\n') + name);
+      
+      return lines.join('\n');
+    },
+  },
+
 ];
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
