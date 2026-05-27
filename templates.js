@@ -763,6 +763,60 @@ const TEMPLATES = [
     },
   },
 
+  // ── Registrar Refusal Pushback ─────────────────────────────
+  {
+    id: 'registrar_pushback',
+    name: 'Registrar Refusal Pushback',
+    folder: 'Follow-Ups',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'registrar',        label:'Registrar',              type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
+      { id:'their_case_id',    label:'Their ticket / case ID', type:'text',       placeholder:"Ref from the registrar's reply" },
+      { id:'offending_domain', label:'Offending domain',       type:'text',       placeholder:'malicious-domain.com', sanitize:'domain' },
+      { _divider: true },
+      { id:'company_name',     label:'Your company name',      type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' }
+    ],
+
+    render(v) {
+      const regSpan = v.registrar ? v.registrar + ' ' : '';
+      const ds      = sanitizeDomain(v.offending_domain) || '[offending domain]';
+      const lines   = [];
+      
+      lines.push(`Subject: RE: Abuse Report - ${ds} - Ref: ${v.their_case_id || '[their case ID]'}`);
+      lines.push(`\nHi ${regSpan}Abuse team,`);
+      lines.push(`\nWe work with hundreds of registrars all over the world. While we are also working with the hosting provider to shut this website down, it still remains an obligation of the registrar to suspend the domain if it is clearly being used for illegal activity as is the case in question.`);
+      lines.push(`\nPlease see the final recommendation on the ICANN website here:\nhttps://www.icann.org/resources/pages/phishing-2013-05-03-en`);
+      lines.push(`\nwhich suggests contacting the registrar who has the ability to suspend the domain directly. This is outlined in more detail as a part of the ARRs which you as a registrar are bound to as a part of ICANN compliance:\nhttps://www.icann.org/resources/pages/approved-with-specs-2013-09-17-en`);
+      lines.push(`\nPlease kindly assist us by suspending this domain.`);
+      lines.push(`\nThank you.`);
+      lines.push(`\n${v.company_name || '[Company Name]'}`);
+      
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const regSpan = v.registrar ? fs('registrar', v.registrar) + ' ' : '';
+      const ds      = sanitizeDomain(v.offending_domain);
+      const lines   = [];
+      
+      lines.push(hesc('Subject: RE: Abuse Report - ') + fs('offending_domain', ds, '[offending domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
+      lines.push('\n' + hesc('Hi ') + regSpan + hesc('Abuse team,'));
+      lines.push('\n' + hesc('We work with hundreds of registrars all over the world. While we are also working with the hosting provider to shut this website down, it still remains an obligation of the registrar to suspend the domain if it is clearly being used for illegal activity as is the case in question.'));
+      lines.push('\n' + hesc('Please see the final recommendation on the ICANN website here:\nhttps://www.icann.org/resources/pages/phishing-2013-05-03-en'));
+      lines.push('\n' + hesc('which suggests contacting the registrar who has the ability to suspend the domain directly. This is outlined in more detail as a part of the ARRs which you as a registrar are bound to as a part of ICANN compliance:\nhttps://www.icann.org/resources/pages/approved-with-specs-2013-09-17-en'));
+      lines.push('\n' + hesc('Please kindly assist us by suspending this domain.'));
+      lines.push('\n' + hesc('Thank you.'));
+      lines.push('\n' + fs('company_name', v.company_name, '[Company Name]'));
+      
+      return lines.join('\n');
+    },
+  },
+
 ];
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
