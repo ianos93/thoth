@@ -300,6 +300,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
       <div class="bld-hdr">
         <span class="bld-hdr-title" id="bld-title">New Template</span>
         <div class="bld-hdr-btns">
+          <button class="btn btn-ghost" id="btn-bld-import" style="color: var(--ac); border-color: var(--bs);">✨ Paste Raw Text</button>
           <button class="btn btn-ghost" id="btn-bld-cancel">Cancel</button>
           <button class="btn btn-primary" id="btn-bld-save">Save template</button>
         </div>
@@ -563,6 +564,50 @@ document.getElementById('btn-dupe-tmpl').addEventListener('click',()=>{if(curTmp
 document.getElementById('bld-name').addEventListener('input',e=>{bld.name=e.target.value;});
 document.getElementById('bld-folder').addEventListener('change',e=>{bld.folder=e.target.value;});
 document.getElementById('bld-output').addEventListener('input',e=>{bld.outputTemplate=e.target.value;});
+
+document.getElementById('btn-bld-import').addEventListener('click', () => {
+  const rawText = prompt('Paste your raw email/template text here.\n\nThe tool will look for anything inside brackets like [this] and automatically convert them into fields:');
+  
+  if (!rawText || !rawText.trim()) return;
+
+  // Find anything inside [ ] or < > or { } (excluding our own {{ }})
+  const regex = /\[(.*?)\]|\<(.*?)\>|\{(?!\{)(.*?)(?!\})\}/g;
+  let parsedOutput = rawText;
+  let match;
+  
+  // Keep track of IDs we've already added so we don't make duplicate fields
+  const existingIds = new Set(bld.fields.map(f => f.id));
+
+  while ((match = regex.exec(rawText)) !== null) {
+    // Get the text inside the brackets (match[1] is [], match[2] is <>, match[3] is {})
+    const rawLabel = match[1] || match[2] || match[3]; 
+    if (!rawLabel) continue;
+
+    const cleanLabel = rawLabel.replace(/^insert /i, '').trim(); // Remove "insert " if they typed it
+    const id = labelToId(cleanLabel);
+
+    // Replace the exact bracketed text with the builder token
+    parsedOutput = parsedOutput.replace(match[0], `{{${id}}}`);
+
+    // Create the field if it doesn't exist yet
+    if (!existingIds.has(id)) {
+      bld.fields.push({
+        id: id,
+        label: cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1), // Capitalize first letter
+        type: 'text',
+        placeholder: `e.g. ${cleanLabel}…`,
+        _manualId: true
+      });
+      existingIds.add(id);
+    }
+  }
+
+  // Update the builder state and UI
+  bld.outputTemplate = parsedOutput;
+  document.getElementById('bld-output').value = parsedOutput;
+  renderBldFields();
+  showToast('Template auto-generated from text!');
+});
 
 document.getElementById('btn-bld-new-folder').addEventListener('click',()=>{
   const name=prompt('New folder name:'); if(!name?.trim()) return;
