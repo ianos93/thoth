@@ -178,9 +178,8 @@ const TEMPLATES = [
       const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
       const ds    = sanitizeDomain(v.offending_domain) || '[offending domain]';
       const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
-      const base  = (v.offending_domain || '[domain]').replace(/^https?:\/\//i, '');
       const lines = [];
-      lines.push(`Subject: [FOLLOW UP] ${abuse} - ${base} - Ref: ${v.their_case_id || '[their case ID]'}`);
+      lines.push(`Subject: [FOLLOW UP] ${abuse} - ${ds} - Ref: ${v.their_case_id || '[their case ID]'}`);
       lines.push(`\nTo the Abuse Department,`);
       lines.push(`\nThis is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.`);
       lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
@@ -208,9 +207,8 @@ const TEMPLATES = [
       const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
       const ds    = sanitizeDomain(v.offending_domain);
       const us    = sanitizeUrl(v.offending_url);
-      const base  = (v.offending_domain || '').replace(/^https?:\/\//i, '');
       const lines = [];
-      lines.push(hesc('Subject: [FOLLOW UP] ') + fs('abuse_type', abuse, '[abuse type]') + hesc(' - ') + fs('offending_domain', base, '[domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
+      lines.push(hesc('Subject: [FOLLOW UP] ') + fs('abuse_type', abuse, '[abuse type]') + hesc(' - ') + fs('offending_domain', ds, '[domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
       lines.push('\n' + hesc('To the Abuse Department,'));
       lines.push('\n' + hesc('This is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
@@ -349,7 +347,7 @@ const TEMPLATES = [
       { id:'host',             label:'Host / provider',            type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare\u2026' },
       { id:'client',           label:'Client',                     type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
       { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL',     type:'text',       placeholder:'https://infringing-site.com' },
+      { id:'infringing_url',   label:'Infringing website URL',     type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
       { id:'client_url',       label:"Client's original website",  type:'text',       placeholder:'https://client-brand.com' },
       { _divider: true },
       { id:'jurisdiction',     label:'Trademark jurisdiction',     type:'text',       placeholder:'e.g. United States, European Union\u2026' },
@@ -365,11 +363,12 @@ const TEMPLATES = [
       const ts     = v.timestamp || nowUtc();
       const client = v.client || '[client]';
       const host   = v.host || '[Host name]';
+      const us     = sanitizeUrl(v.infringing_url) || '[infringing website URL]';
       const lines  = [];
-      lines.push(`Subject: Trademark infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`Subject: Trademark infringement in relation to ${us}`);
       lines.push(`\nDear ${host},`);
       lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringing website URL]'}`);
+      lines.push(`\nThe infringing material is found at: ${us}`);
       lines.push(`And the original material of our client is at: ${v.client_url || "[client's website URL]"}`);
       lines.push(`\n${client} owns a ${v.jurisdiction || '[country jurisdiction]'} registered trademark under registration number: ${v.trademark_number || '[trademark number]'}. See attached proof of registration.`);
       lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
@@ -386,11 +385,12 @@ const TEMPLATES = [
       const ts         = v.timestamp || nowUtc();
       const clientSpan = fs('client', v.client, '[client]');
       const hostSpan   = fs('host', v.host, '[Host name]');
+      const us         = sanitizeUrl(v.infringing_url);
       const lines      = [];
-      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
       lines.push('\n' + hesc('Dear ') + hostSpan + hesc(','));
       lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc('. It has come to our attention that a website your company hosts may be infringing on one of ') + clientSpan + hesc("'s trademarks. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website URL]'));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringing website URL]'));
       lines.push(hesc("And the original material of our client is at: ") + fs('client_url', v.client_url, "[client's website URL]"));
       lines.push('\n' + clientSpan + hesc(' owns a ') + fs('jurisdiction', v.jurisdiction, '[country jurisdiction]') + hesc(' registered trademark under registration number: ') + fs('trademark_number', v.trademark_number, '[trademark number]') + hesc('. See attached proof of registration.'));
       lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(', creating confusion for ') + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
@@ -434,11 +434,12 @@ const TEMPLATES = [
       const type   = v.infringement_type || '[Copyright / Trademark]';
       const client = v.client || '[client]';
       const host   = v.host || '[Host name]';
+      const us     = sanitizeUrl(v.infringing_url) || '[infringing website]';
       const lines  = [];
-      lines.push(`Subject: ${type} infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`Subject: ${type} infringement in relation to ${us}`);
       lines.push(`\nDear ${host}`);
       lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`\nThe infringing material is found at: ${us}`);
       lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
       lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
       lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
@@ -456,11 +457,12 @@ const TEMPLATES = [
       const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
       const clientSpan = fs('client', v.client, '[client]');
       const hostSpan   = fs('host', v.host, '[Host name]');
+      const us         = sanitizeUrl(v.infringing_url);
       const lines      = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
       lines.push('\n' + hesc('Dear ') + hostSpan);
       lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website your company hosts may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringing website]'));
       lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
       lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
       lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
@@ -504,11 +506,12 @@ const TEMPLATES = [
       const client  = v.client || '[client]';
       const details = v.client_details || '[client’s full name, co. registration number, location]';
       const host    = v.host || '[Host name]';
+      const us      = sanitizeUrl(v.infringing_url) || '[infringer website]';
       const lines   = [];
-      lines.push(`Subject: ${type} infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`Subject: ${type} infringement in relation to ${us}`);
       lines.push(`\nDear ${host}`);
       lines.push(`\nWe act on behalf of our client, ${details}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringer website]'}`);
+      lines.push(`\nThe infringing material is found at: ${us}`);
       lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
       lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
       lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
@@ -522,11 +525,12 @@ const TEMPLATES = [
       const clientSpan  = fs('client', v.client, '[client]');
       const detailsSpan = fs('client_details', v.client_details, '[client’s full name, co. registration number, location]');
       const hostSpan    = fs('host', v.host, '[Host name]');
+      const us          = sanitizeUrl(v.infringing_url);
       const lines       = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
       lines.push('\n' + hesc('Dear ') + hostSpan);
       lines.push('\n' + hesc('We act on behalf of our client, ') + detailsSpan + hesc(". It has come to our attention that a website your company hosts may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringer website]'));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringer website]'));
       lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
       lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
       lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
@@ -566,11 +570,12 @@ const TEMPLATES = [
       const type   = v.infringement_type || '[Copyright / Trademark]';
       const client = v.client || '[client]';
       const reg    = v.registrar || '[Registrar name]';
+      const us     = sanitizeUrl(v.infringing_url) || '[infringing website]';
       const lines  = [];
-      lines.push(`Subject: ${type} infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`Subject: ${type} infringement in relation to ${us}`);
       lines.push(`\nDear ${reg}`);
       lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website for which your company is the registrar may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringer website]'}`);
+      lines.push(`\nThe infringing material is found at: ${us}`);
       lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
       lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
       lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
@@ -587,11 +592,12 @@ const TEMPLATES = [
       const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
       const clientSpan = fs('client', v.client, '[client]');
       const regSpan    = fs('registrar', v.registrar, '[Registrar name]');
+      const us         = sanitizeUrl(v.infringing_url);
       const lines      = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
       lines.push('\n' + hesc('Dear ') + regSpan);
       lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website for which your company is the registrar may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringer website]'));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringer website]'));
       lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
       lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
       lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
@@ -602,8 +608,8 @@ const TEMPLATES = [
       lines.push('\n' + hesc('Regards'));
       lines.push(hesc('Signed: ') + fs('signature', v.signature, '[Your initials and surname]'));
       return lines.join('\n');
-    }
-  }
+    },
+  },
 
 ];
 
