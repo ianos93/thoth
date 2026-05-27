@@ -88,10 +88,12 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 #out-text{flex:1;overflow-y:auto;padding:22px 28px;font-family:'Courier New',monospace;font-size:13px;line-height:1.75;color:var(--tm);white-space:pre-wrap;word-break:break-all;}
 .out-field{cursor:pointer;border-radius:3px;padding:1px 3px;margin:0 -3px;background:rgba(200,240,74,.13);color:var(--ac);transition:background .15s;}
 .out-field:hover{background:rgba(200,240,74,.30);color:var(--ac);}
-@keyframes border-flash{0%,100%{border-left-color:transparent}20%,80%{border-left-color:var(--ac)}}
-@keyframes text-flash{0%,100%{color:var(--tf)}20%,80%{color:var(--ac)}}
-.field-flash{animation:border-flash 1s ease-in-out;}
-.field-flash label{animation:text-flash 1s ease-in-out;}
+@keyframes border-flash{0%,50%{border-left-color:transparent}25%,100%{border-left-color:var(--ac)}}
+@keyframes text-flash{0%,50%{color:var(--tf)}25%,100%{color:var(--ac)}}
+@keyframes box-flash{0%,50%{border-color:var(--bs)}25%,100%{border-color:var(--ad)}}
+.field-flash{animation:border-flash .6s ease-in-out;}
+.field-flash label{animation:text-flash .6s ease-in-out;}
+.field-flash input, .field-flash select, .field-flash textarea{animation:box-flash .6s ease-in-out;}
 #fields-container{flex:1;overflow-y:auto;padding:20px 18px;}
 
 /* ── Overlay panels ── */
@@ -177,8 +179,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .fg{margin-bottom:20px;border-left:2px solid transparent;padding-left:6px;margin-left:-8px;transition:border-color .2s ease;}
 .fg-lrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .fg-lrow label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);transition:color .2s ease;}
-.fg:focus-within{border-left-color:var(--ac)!important;}
-.fg:focus-within label{color:var(--ac)!important;}
+.fg:focus-within{border-left-color:var(--ac);}
+.fg:focus-within label{color:var(--ac);}
 .fg-badge{font-size:10px;color:var(--ad);}
 .f-hint{font-size:11px;color:var(--tf);margin-top:4px;line-height:1.4;}
 .f-san{font-size:11px;color:var(--ad);margin-top:3px;font-family:'Courier New',monospace;word-break:break-all;}
@@ -985,15 +987,14 @@ function buildListField(field){
 
 function highlightField(fieldId){
   const fc = document.getElementById('fields-container');
+  fc.querySelectorAll('.field-flash').forEach(el => el.classList.remove('field-flash'));
   const group = fc.querySelector(`[data-field-id="${fieldId}"]`);
   if(!group) return;
   group.scrollIntoView({behavior:'smooth',block:'center'});
-  group.classList.remove('field-flash');
-  void group.offsetWidth; // reflow to restart animation
+  void group.offsetWidth;
   group.classList.add('field-flash');
-  // Focus the first input/select/textarea inside
   const inp = group.querySelector('input,select,textarea');
-  if(inp) setTimeout(()=>inp.focus(),200);
+  if(inp) inp.focus({ preventScroll: true }); // Focuses instantly without breaking the scroll
 }
 
 // Click delegation on output panel
