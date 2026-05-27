@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // templates.js — built-in template definitions
-// Place this file in the same folder as index.html
+// Place in the same folder as index.html
 // ═══════════════════════════════════════════════════════════════
 
 const today  = () => new Date().toISOString().slice(0, 10);
@@ -12,27 +12,20 @@ function sanitizeUrl(raw) {
     .replace(/^https?:\/\//i, m => m.replace(/https/i,'hxxps').replace(/http/i,'hxxp'))
     .replace(/\./g, '[.]');
 }
-
 function sanitizeDomain(raw) {
   if (!raw) return raw;
   return raw.replace(/^https?:\/\//i, '').replace(/\./g, '[.]');
 }
-
 function hesc(s) {
   return String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-// Always wraps — passes placeholder if value is empty so the span is always rendered
+// Always wraps — shows placeholder span if value is empty
 function fs(id, value, placeholder) {
   const display = value || placeholder || '';
   if (!display) return '';
   return `<span class="out-field" data-field="${id}">${hesc(display)}</span>`;
-}
-
-function hl(strings, ...values) {
-  return strings.map((s, i) => hesc(s) + (values[i] !== undefined ? values[i] : '')).join('');
 }
 
 const ABUSE_MAP = {
@@ -70,19 +63,19 @@ const TEMPLATES = [
     },
 
     fields: [
-      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy…' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name…' },
+      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
+      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name\u2026' },
       { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
       { _divider: true },
-      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',            sanitize:'domain' },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/…',   sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',       placeholder:'legitimate-brand.com' },
+      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',           sanitize:'domain' },
+      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
+      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
       { id:'date_observed',    label:'Date observed',              type:'date' },
       { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse…', hint:'Describe how to access the malicious page.' },
+      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026', hint:'Describe how to access the malicious page.' },
       { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics…' },
-      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link…' },
+      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics\u2026' },
+      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link\u2026' },
       { _divider: true },
       { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
       { id:'our_case_id',  label:'Case ID',           type:'text', placeholder:'CASE-2024-XXXXX' },
@@ -107,7 +100,7 @@ const TEMPLATES = [
       lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
       lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
       if (v.evidence_data) lines.push(`\nEvidence details:\n${v.evidence_data}`);
-      if (v.blocklists?.length) { lines.push(`\nFlagged by the following blocklists:`); v.blocklists.forEach(b => lines.push(`  • ${b}`)); }
+      if (v.blocklists?.length) { lines.push(`\nFlagged by the following blocklists:`); v.blocklists.forEach(b => lines.push(`  \u2022 ${b}`)); }
       lines.push(`\n${'─'.repeat(55)}`);
       lines.push(`Please confirm receipt of this report and inform us of the outcome of your investigation.\n`);
       lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
@@ -136,10 +129,7 @@ const TEMPLATES = [
       lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
       lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
       if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
-      if (v.blocklists?.length) {
-        lines.push('\n' + hesc('Flagged by the following blocklists:'));
-        v.blocklists.forEach(b => lines.push(hesc('  • ') + fs('blocklists', b)));
-      }
+      if (v.blocklists?.length) { lines.push('\n' + hesc('Flagged by the following blocklists:')); v.blocklists.forEach(b => lines.push(hesc('  \u2022 ') + fs('blocklists', b))); }
       lines.push('\n' + hesc('─'.repeat(55)));
       lines.push(hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
       lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
@@ -164,19 +154,19 @@ const TEMPLATES = [
     },
 
     fields: [
-      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy…' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name…' },
+      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
+      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name\u2026' },
       { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
       { id:'their_case_id',label:'Their ticket / case ID',         type:'text',       placeholder:"Ref from the registrar's reply" },
       { _divider: true },
-      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',            sanitize:'domain' },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/…',   sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',       placeholder:'legitimate-brand.com' },
+      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',           sanitize:'domain' },
+      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
+      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
       { id:'date_observed',    label:'Date observed',              type:'date' },
       { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse…' },
+      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026' },
       { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Updated evidence or notes…' },
+      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Updated evidence or notes\u2026' },
       { _divider: true },
       { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
       { id:'our_case_id',  label:'Our case ID',       type:'text', placeholder:'CASE-2024-XXXXX' },
@@ -244,7 +234,6 @@ const TEMPLATES = [
     },
   },
 
-
   // ── Hosting Provider Abuse Report ──────────────────────────
   {
     id: 'abuse_host',
@@ -258,18 +247,18 @@ const TEMPLATES = [
     },
 
     fields: [
-      { id:'host',         label:'Hosting provider',               type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare…' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name…' },
+      { id:'host',         label:'Hosting provider',               type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare\u2026' },
+      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name\u2026' },
       { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
       { _divider: true },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/…', sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',       placeholder:'legitimate-brand.com' },
+      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
+      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
       { id:'date_observed',    label:'Date observed',              type:'date' },
       { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse…', hint:'Describe how to access the malicious page.' },
+      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026', hint:'Describe how to access the malicious page.' },
       { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics…' },
-      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link…' },
+      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics\u2026' },
+      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link\u2026' },
       { _divider: true },
       { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
       { id:'our_case_id',  label:'Case ID',           type:'text', placeholder:'CASE-2024-XXXXX' },
@@ -277,50 +266,33 @@ const TEMPLATES = [
     ],
 
     render(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
-      const phishDomain = v.offending_url
-        ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0]
-        : '[phishing website]';
+      const ts         = v.timestamp || nowUtc();
+      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
+      const us         = sanitizeUrl(v.offending_url) || '[offending URL]';
+      const phishRaw   = v.offending_url ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0] : '[phishing website]';
+      const phishSan   = sanitizeDomain(phishRaw) || phishRaw;
       const lines = [];
-      lines.push(`Subject: [URGENT] Phishing website Takedown Request for ${phishDomain}`);
-      lines.push(`
-Dear ${v.host ? v.host + ' Abuse Team' : '[Host Provider] Abuse Team'},`);
-      lines.push(`
-We have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
-      lines.push(`
-As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
-      lines.push(`
-${'─'.repeat(55)}
-ABUSE REPORT & EVIDENCE
-${'─'.repeat(55)}`);
+      lines.push(`Subject: [URGENT] Phishing website Takedown Request for ${phishSan}`);
+      lines.push(`\nDear ${v.host ? v.host + ' Abuse Team' : '[Host Provider] Abuse Team'},`);
+      lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
+      lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
+      lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
       lines.push(`Offending URL:     ${us}`);
       lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
       lines.push(`Abuse type:        ${abuse}`);
       lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
       lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
       lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
-      if (v.evidence_data) lines.push(`
-Evidence details:
-${v.evidence_data}`);
+      if (v.evidence_data) lines.push(`\nEvidence details:\n${v.evidence_data}`);
       if (v.blocklists?.length) {
-        lines.push(`
-Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:`);
-        v.blocklists.forEach(b => lines.push(`  • ${b}`));
+        lines.push(`\nPlease note that the phishing URL is already flagged as malicious by the following reputed blocklists:`);
+        v.blocklists.forEach(b => lines.push(`  \u2022 ${b}`));
       } else {
-        lines.push(`
-Please note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]`);
+        lines.push(`\nPlease note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]`);
       }
-      lines.push(`
-Please confirm receipt of this report and inform us of the outcome of your investigation.
-`);
-      lines.push(`Sincerely,
-Abuse Operations
-${v.company_name || '[Company Name]'}`);
-      lines.push(`
-${'─'.repeat(55)}
-INTERNAL REFERENCE`);
+      lines.push(`\nPlease confirm receipt of this report and inform us of the outcome of your investigation.\n`);
+      lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
+      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
       if (v.client) lines.push(`Client:    ${v.client}`);
       lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
       lines.push(`Timestamp: ${ts}`);
@@ -328,14 +300,13 @@ INTERNAL REFERENCE`);
     },
 
     renderHtml(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
-      const us    = sanitizeUrl(v.offending_url);
-      const phishDomain = v.offending_url
-        ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0]
-        : null;
+      const ts         = v.timestamp || nowUtc();
+      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type;
+      const us         = sanitizeUrl(v.offending_url);
+      const phishRaw   = v.offending_url ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0] : null;
+      const phishSan   = phishRaw ? sanitizeDomain(phishRaw) : null;
       const lines = [];
-      lines.push(hesc('Subject: [URGENT] Phishing website Takedown Request for ') + fs('offending_url', phishDomain, '[phishing website]'));
+      lines.push(hesc('Subject: [URGENT] Phishing website Takedown Request for ') + fs('offending_url', phishSan, '[phishing website]'));
       lines.push('\n' + hesc('Dear ') + fs('host', v.host ? v.host + ' Abuse Team' : null, '[Host Provider] Abuse Team') + hesc(','));
       lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
       lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
@@ -349,12 +320,82 @@ INTERNAL REFERENCE`);
       if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
       if (v.blocklists?.length) {
         lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:'));
-        v.blocklists.forEach(b => lines.push(hesc('  • ') + fs('blocklists', b)));
+        v.blocklists.forEach(b => lines.push(hesc('  \u2022 ') + fs('blocklists', b)));
       } else {
         lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]'));
       }
       lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
       lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
+      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
+      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
+      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
+      return lines.join('\n');
+    },
+  },
+
+  // ── Trademark Infringement Notice ──────────────────────────
+  {
+    id: 'trademark_infringement',
+    name: 'Trademark Infringement Notice',
+    folder: 'Legal Notices',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'host',             label:'Host / provider',            type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare\u2026' },
+      { id:'client',           label:'Client',                     type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
+      { _divider: true },
+      { id:'infringing_url',   label:'Infringing website URL',     type:'text',       placeholder:'https://infringing-site.com' },
+      { id:'client_url',       label:"Client's original website",  type:'text',       placeholder:'https://client-brand.com' },
+      { _divider: true },
+      { id:'jurisdiction',     label:'Trademark jurisdiction',     type:'text',       placeholder:'e.g. United States, European Union\u2026' },
+      { id:'trademark_number', label:'Trademark registration no.', type:'text',       placeholder:'e.g. US123456789' },
+      { id:'infringement_desc',label:'What was infringed',         type:'textarea',   placeholder:'e.g. logo and name to provide a similar product / content from our client website', hint:'Describe specifically what the infringer copied or misused.' },
+      { _divider: true },
+      { id:'company_name',     label:'Your company name',          type:'text',       placeholder:'Acme Legal Inc.', profileKey:'company' },
+      { id:'our_case_id',      label:'Case ID',                    type:'text',       placeholder:'CASE-2024-XXXXX' },
+      { id:'timestamp',        label:'System timestamp',           type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
+    ],
+
+    render(v) {
+      const ts     = v.timestamp || nowUtc();
+      const client = v.client || '[client]';
+      const host   = v.host || '[Host name]';
+      const lines  = [];
+      lines.push(`Subject: Trademark infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`\nDear ${host},`);
+      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks. We request your cooperation to have the infringing content removed.`);
+      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringing website URL]'}`);
+      lines.push(`And the original material of our client is at: ${v.client_url || "[client's website URL]"}`);
+      lines.push(`\n${client} owns a ${v.jurisdiction || '[country jurisdiction]'} registered trademark under registration number: ${v.trademark_number || '[trademark number]'}. See attached proof of registration.`);
+      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
+      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.`);
+      lines.push(`\nRegards,\n${v.company_name || '[Company Name]'}`);
+      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
+      if (v.client) lines.push(`Client:    ${v.client}`);
+      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
+      lines.push(`Timestamp: ${ts}`);
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const ts         = v.timestamp || nowUtc();
+      const clientSpan = fs('client', v.client, '[client]');
+      const hostSpan   = fs('host', v.host, '[Host name]');
+      const lines      = [];
+      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(','));
+      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc('. It has come to our attention that a website your company hosts may be infringing on one of ') + clientSpan + hesc("'s trademarks. We request your cooperation to have the infringing content removed."));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website URL]'));
+      lines.push(hesc("And the original material of our client is at: ") + fs('client_url', v.client_url, "[client's website URL]"));
+      lines.push('\n' + clientSpan + hesc(' owns a ') + fs('jurisdiction', v.jurisdiction, '[country jurisdiction]') + hesc(' registered trademark under registration number: ') + fs('trademark_number', v.trademark_number, '[trademark number]') + hesc('. See attached proof of registration.'));
+      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(', creating confusion for ') + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
+      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.'));
+      lines.push('\n' + hesc('Regards,\n') + fs('company_name', v.company_name, '[Company Name]'));
       lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
       if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
       lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
@@ -376,10 +417,10 @@ INTERNAL REFERENCE`);
       { id:'addressed',       label:'Addressed to',      type:'text',     placeholder:'Name / Department' },
       { id:'subject',         label:'Subject',           type:'text',     placeholder:'Summary in one line' },
       { _divider: true },
-      { id:'summary',         label:'Executive summary', type:'textarea', placeholder:'Brief overview…' },
-      { id:'body',            label:'Main content',      type:'textarea', placeholder:'Detailed analysis…' },
-      { id:'conclusions',     label:'Conclusions',       type:'textarea', placeholder:'Key takeaways…' },
-      { id:'recommendations', label:'Recommendations',   type:'textarea', placeholder:'Next steps…' },
+      { id:'summary',         label:'Executive summary', type:'textarea', placeholder:'Brief overview\u2026' },
+      { id:'body',            label:'Main content',      type:'textarea', placeholder:'Detailed analysis\u2026' },
+      { id:'conclusions',     label:'Conclusions',       type:'textarea', placeholder:'Key takeaways\u2026' },
+      { id:'recommendations', label:'Recommendations',   type:'textarea', placeholder:'Next steps\u2026' },
     ],
 
     render(v) {
@@ -423,10 +464,10 @@ INTERNAL REFERENCE`);
       { id:'to',      label:'To',      type:'email', placeholder:'recipient@example.com' },
       { id:'cc',      label:'CC',      type:'email', placeholder:'optional' },
       { id:'from',    label:'From',    type:'email', placeholder:'you@example.com', profileKey:'email' },
-      { id:'subject', label:'Subject', type:'text',  placeholder:'Weekly update — Week 42' },
+      { id:'subject', label:'Subject', type:'text',  placeholder:'Weekly update \u2014 Week 42' },
       { id:'date',    label:'Date',    type:'date' },
       { _divider: true },
-      { id:'body', label:'Body', type:'textarea', placeholder:'Write your email here…' },
+      { id:'body', label:'Body', type:'textarea', placeholder:'Write your email here\u2026' },
     ],
 
     render(v) {
@@ -461,16 +502,16 @@ INTERNAL REFERENCE`);
     folder: 'General',
 
     fields: [
-      { id:'meeting',      label:'Meeting name',    type:'text',     placeholder:'Sprint Planning — Week 42' },
+      { id:'meeting',      label:'Meeting name',    type:'text',     placeholder:'Sprint Planning \u2014 Week 42' },
       { id:'date',         label:'Date',            type:'date' },
       { id:'location',     label:'Location / link', type:'text',     placeholder:'Room 3B / Zoom' },
       { id:'facilitator',  label:'Facilitator',     type:'text',     placeholder:'Name', profileKey:'name' },
-      { id:'attendees',    label:'Attendees',       type:'list',     placeholder:'Name, role…' },
+      { id:'attendees',    label:'Attendees',       type:'list',     placeholder:'Name, role\u2026' },
       { _divider: true },
-      { id:'agenda',       label:'Agenda items',   type:'list',     placeholder:'Item…' },
-      { id:'notes',        label:'Notes',           type:'textarea', placeholder:'Key points…' },
-      { id:'decisions',    label:'Decisions made',  type:'list',     placeholder:'Decision…' },
-      { id:'actions',      label:'Action items',    type:'list',     placeholder:'Who does what by when…' },
+      { id:'agenda',       label:'Agenda items',   type:'list',     placeholder:'Item\u2026' },
+      { id:'notes',        label:'Notes',           type:'textarea', placeholder:'Key points\u2026' },
+      { id:'decisions',    label:'Decisions made',  type:'list',     placeholder:'Decision\u2026' },
+      { id:'actions',      label:'Action items',    type:'list',     placeholder:'Who does what by when\u2026' },
       { id:'next_meeting', label:'Next meeting',    type:'text',     placeholder:'Date / time' },
     ],
 
@@ -481,11 +522,11 @@ INTERNAL REFERENCE`);
       lines.push(`Date:        ${v.date || '[Date]'}`);
       lines.push(`Location:    ${v.location || '[Location]'}`);
       lines.push(`Facilitator: ${v.facilitator || '[Facilitator]'}`);
-      if (v.attendees?.length)  lines.push(`\nATTENDEES\n${v.attendees.map(a => `  • ${a}`).join('\n')}`);
+      if (v.attendees?.length)  lines.push(`\nATTENDEES\n${v.attendees.map(a => `  \u2022 ${a}`).join('\n')}`);
       if (v.agenda?.length)     lines.push(`\nAGENDA\n${v.agenda.map((a,i) => `  ${i+1}. ${a}`).join('\n')}`);
       if (v.notes)              lines.push(`\nNOTES\n\n${v.notes}`);
-      if (v.decisions?.length)  lines.push(`\nDECISIONS\n${v.decisions.map(d => `  • ${d}`).join('\n')}`);
-      if (v.actions?.length)    lines.push(`\nACTION ITEMS\n${v.actions.map(a => `  ☐ ${a}`).join('\n')}`);
+      if (v.decisions?.length)  lines.push(`\nDECISIONS\n${v.decisions.map(d => `  \u2022 ${d}`).join('\n')}`);
+      if (v.actions?.length)    lines.push(`\nACTION ITEMS\n${v.actions.map(a => `  \u2610 ${a}`).join('\n')}`);
       if (v.next_meeting)       lines.push(`\nNEXT MEETING: ${v.next_meeting}`);
       return lines.join('\n');
     },
@@ -497,110 +538,16 @@ INTERNAL REFERENCE`);
       lines.push(hesc('Date:        ') + fs('date', v.date, '[Date]'));
       lines.push(hesc('Location:    ') + fs('location', v.location, '[Location]'));
       lines.push(hesc('Facilitator: ') + fs('facilitator', v.facilitator, '[Facilitator]'));
-      if (v.attendees?.length)  lines.push('\n' + hesc('ATTENDEES\n') + v.attendees.map(a => hesc('  • ') + fs('attendees', a)).join('\n'));
+      if (v.attendees?.length)  lines.push('\n' + hesc('ATTENDEES\n') + v.attendees.map(a => hesc('  \u2022 ') + fs('attendees', a)).join('\n'));
       if (v.agenda?.length)     lines.push('\n' + hesc('AGENDA\n') + v.agenda.map((a,i) => hesc(`  ${i+1}. `) + fs('agenda', a)).join('\n'));
       if (v.notes)              lines.push('\n' + hesc('NOTES\n\n') + fs('notes', v.notes));
-      if (v.decisions?.length)  lines.push('\n' + hesc('DECISIONS\n') + v.decisions.map(d => hesc('  • ') + fs('decisions', d)).join('\n'));
-      if (v.actions?.length)    lines.push('\n' + hesc('ACTION ITEMS\n') + v.actions.map(a => hesc('  ☐ ') + fs('actions', a)).join('\n'));
+      if (v.decisions?.length)  lines.push('\n' + hesc('DECISIONS\n') + v.decisions.map(d => hesc('  \u2022 ') + fs('decisions', d)).join('\n'));
+      if (v.actions?.length)    lines.push('\n' + hesc('ACTION ITEMS\n') + v.actions.map(a => hesc('  \u2610 ') + fs('actions', a)).join('\n'));
       if (v.next_meeting)       lines.push('\n' + hesc('NEXT MEETING: ') + fs('next_meeting', v.next_meeting));
       return lines.join('\n');
     },
   },
 
 ];
-
-  // ── Trademark Infringement Notice ──────────────────────────
-  {
-    id: 'trademark_infringement',
-    name: 'Trademark Infringement Notice',
-    folder: 'Legal Notices',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
-
-    fields: [
-      { id:'host',             label:'Host / provider',             type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare…' },
-      { id:'client',           label:'Client',                      type:'listpicker', listKey:'clients',  placeholder:'Client name…' },
-      { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL',      type:'text',       placeholder:'https://infringing-site.com' },
-      { id:'client_url',       label:"Client's original website",   type:'text',       placeholder:'https://client-brand.com' },
-      { _divider: true },
-      { id:'jurisdiction',     label:'Trademark jurisdiction',      type:'text',       placeholder:'e.g. United States, European Union…' },
-      { id:'trademark_number', label:'Trademark registration no.',  type:'text',       placeholder:'e.g. US123456789' },
-      { id:'infringement_desc',label:'What was infringed',          type:'textarea',   placeholder:'e.g. logo and name to provide a similar product in the same market as our client / content from our client's website', hint:'Describe specifically what the infringer copied or misused.' },
-      { _divider: true },
-      { id:'company_name',     label:'Your company name',           type:'text',       placeholder:'Acme Legal Inc.', profileKey:'company' },
-      { id:'our_case_id',      label:'Case ID',                     type:'text',       placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',        label:'System timestamp',            type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
-
-    render(v) {
-      const ts     = v.timestamp || nowUtc();
-      const client = v.client || '[client]';
-      const host   = v.host || '[Host name]';
-      const lines  = [];
-      lines.push(`Subject: Trademark infringement in relation to ${v.infringing_url || '[infringing website]'}`);
-      lines.push(`
-Dear ${host},`);
-      lines.push(`
-We act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks. We request your cooperation to have the infringing content removed.`);
-      lines.push(`
-The infringing material is found at: ${v.infringing_url || '[infringing website URL]'}`);
-      lines.push(`And the original material of our client is at: ${v.client_url || "[client's website URL]"}`);
-      lines.push(`
-${client} owns a ${v.jurisdiction || '[country jurisdiction]'} registered trademark under registration number: ${v.trademark_number || '[trademark number]'}. See attached proof of registration.`);
-      lines.push(`
-The infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
-      lines.push(`
-We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.`);
-      lines.push(`
-Regards,
-${v.company_name || '[Company Name]'}`);
-      lines.push(`
-${'─'.repeat(55)}
-INTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('
-');
-    },
-
-    renderHtml(v) {
-      const ts     = v.timestamp || nowUtc();
-      const client = v.client || '[client]';
-      const clientSpan = fs('client', v.client, '[client]');
-      const hostSpan   = fs('host', v.host, '[Host name]');
-      const lines  = [];
-      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
-      lines.push('
-' + hesc('Dear ') + hostSpan + hesc(','));
-      lines.push('
-' + hesc('We act on behalf of our client, ') + clientSpan + hesc('. It has come to our attention that a website your company hosts may be infringing on one of ') + clientSpan + hesc("'s trademarks. We request your cooperation to have the infringing content removed."));
-      lines.push('
-' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website URL]'));
-      lines.push(hesc("And the original material of our client is at: ") + fs('client_url', v.client_url, "[client's website URL]"));
-      lines.push('
-' + clientSpan + hesc(' owns a ') + fs('jurisdiction', v.jurisdiction, '[country jurisdiction]') + hesc(' registered trademark under registration number: ') + fs('trademark_number', v.trademark_number, '[trademark number]') + hesc('. See attached proof of registration.'));
-      lines.push('
-' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(', creating confusion for ') + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
-      lines.push('
-' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.'));
-      lines.push('
-' + hesc('Regards,
-') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('
-' + hesc('─'.repeat(55)) + '
-' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('
-');
-    },
-  },
-
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
