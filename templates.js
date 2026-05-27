@@ -611,6 +611,73 @@ const TEMPLATES = [
     },
   },
 
+  // ── Phishing App Takedown Request ───────────────────────────
+  {
+    id: 'app_takedown',
+    name: 'Phishing App Takedown Request',
+    folder: 'Abuse Reports',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.company_name && p.company) fv.company_name = p.company;
+    },
+
+    fields: [
+      { id:'host',             label:'Host / App Store',           type:'listpicker', listKey:'hosts',   placeholder:'e.g. Google Play, Apple\u2026' },
+      { id:'client',           label:'Client',                     type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
+      { id:'client_url',       label:"Client's original website",  type:'text',       placeholder:'https://client-brand.com' },
+      { _divider: true },
+      { id:'offending_url',    label:'Phishing App URL',           type:'text',       placeholder:'https://malicious-store.com/app...', sanitize:'url' },
+      { id:'ip_address',       label:'IP address',                 type:'text',       placeholder:'e.g. 192.168.1.1' },
+      { _divider: true },
+      { id:'company_name',     label:'Your company name',          type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' },
+      { id:'our_case_id',      label:'Case ID',                    type:'text',       placeholder:'CASE-2024-XXXXX' },
+      { id:'timestamp',        label:'System timestamp',           type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
+    ],
+
+    render(v) {
+      const ts     = v.timestamp || nowUtc();
+      const client = v.client || '[client]';
+      const host   = v.host || '[website owner]';
+      const us     = sanitizeUrl(v.offending_url) || '[phishing URL]';
+      const lines  = [];
+      lines.push(`Subject: [URGENT] Phishing App Takedown Request for ${us}`);
+      lines.push(`\nDear ${host} Abuse Team,`);
+      lines.push(`\nWe act on behalf of our client, ${client} found at ${v.client_url || '[client URL]'}. It has come to our attention that an unauthorised link to our client’s App is being hosted on your website, and is being used to conduct a phishing attack against ${client}.`);
+      lines.push(`\nThe link to the App is found at: ${us}`);
+      lines.push(`IP address of phishing domain: ${v.ip_address || '[IP address]'}`);
+      lines.push(`\nOur client has not authorized the use of this App, and is not related to nor does it have any affiliation to the publishers of this App. Given the severity of harm caused to our client, we request your urgent assistance to have the malicious App removed.`);
+      lines.push(`\nPlease let us know if you require any further information to have the content removed swiftly.`);
+      lines.push(`\nKind regards,\n${v.company_name || '[Company Name]'}`);
+      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
+      if (v.client) lines.push(`Client:    ${v.client}`);
+      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
+      lines.push(`Timestamp: ${ts}`);
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const ts         = v.timestamp || nowUtc();
+      const clientSpan = fs('client', v.client, '[client]');
+      const hostSpan   = fs('host', v.host, '[website owner]');
+      const us         = sanitizeUrl(v.offending_url);
+      const lines      = [];
+      lines.push(hesc('Subject: [URGENT] Phishing App Takedown Request for ') + fs('offending_url', us, '[phishing URL]'));
+      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(' Abuse Team,'));
+      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(' found at ') + fs('client_url', v.client_url, '[client URL]') + hesc('. It has come to our attention that an unauthorised link to our client’s App is being hosted on your website, and is being used to conduct a phishing attack against ') + clientSpan + hesc('.'));
+      lines.push('\n' + hesc('The link to the App is found at: ') + fs('offending_url', us, '[phishing URL]'));
+      lines.push(hesc('IP address of phishing domain: ') + fs('ip_address', v.ip_address, '[IP address]'));
+      lines.push('\n' + hesc('Our client has not authorized the use of this App, and is not related to nor does it have any affiliation to the publishers of this App. Given the severity of harm caused to our client, we request your urgent assistance to have the malicious App removed.'));
+      lines.push('\n' + hesc('Please let us know if you require any further information to have the content removed swiftly.'));
+      lines.push('\n' + hesc('Kind regards,\n') + fs('company_name', v.company_name, '[Company Name]'));
+      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
+      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
+      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
+      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
+      return lines.join('\n');
+    },
+  },
+
 ];
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
