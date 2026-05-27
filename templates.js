@@ -404,149 +404,76 @@ const TEMPLATES = [
     },
   },
 
-  // ── Formal Report ───────────────────────────────────────────
+  // ── US Hosting Infringement Notice ──────────────────────────
   {
-    id: 'formal_report',
-    name: 'Formal Report',
-    folder: 'General',
+    id: 'us_host_infringement',
+    name: 'US Host Infringement Notice',
+    folder: 'Legal Notices',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.your_name && p.name) fv.your_name = p.name;
+      if (!fv.your_email && p.email) fv.your_email = p.email;
+    },
 
     fields: [
-      { id:'title',           label:'Report title',      type:'text',     placeholder:'Q3 Performance Review' },
-      { id:'date',            label:'Date',              type:'date' },
-      { id:'author',          label:'Prepared by',       type:'text',     placeholder:'Name / Department', profileKey:'name' },
-      { id:'addressed',       label:'Addressed to',      type:'text',     placeholder:'Name / Department' },
-      { id:'subject',         label:'Subject',           type:'text',     placeholder:'Summary in one line' },
+      { id:'infringement_type',label:'Infringement type',      type:'select',     options:['Copyright','Trademark','Copyright and Trademark'] },
+      { id:'host',             label:'Host / provider',        type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare\u2026' },
+      { id:'client',           label:'Client',                 type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
       { _divider: true },
-      { id:'summary',         label:'Executive summary', type:'textarea', placeholder:'Brief overview\u2026' },
-      { id:'body',            label:'Main content',      type:'textarea', placeholder:'Detailed analysis\u2026' },
-      { id:'conclusions',     label:'Conclusions',       type:'textarea', placeholder:'Key takeaways\u2026' },
-      { id:'recommendations', label:'Recommendations',   type:'textarea', placeholder:'Next steps\u2026' },
+      { id:'infringing_url',   label:'Infringing website URL', type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
+      { id:'client_url',       label:"Client's original website", type:'text',    placeholder:'https://client-brand.com' },
+      { id:'infringement_desc',label:'What was infringed',     type:'textarea',   placeholder:'e.g. logo and name to provide a similar product...' },
+      { _divider: true },
+      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' },
+      { id:'your_email',       label:'Your email address',     type:'email',      placeholder:'jane@phishfort.com', profileKey:'email' },
+      { id:'signature',        label:'Signature',              type:'text',       placeholder:'J.M. Smith', hint:'Your initials and surname' }
     ],
 
     render(v) {
-      const lines = [];
-      lines.push(`REPORT: ${v.title || '[Title]'}`);
-      lines.push(`Date:   ${v.date || '[Date]'}`);
-      lines.push(`From:   ${v.author || '[Author]'}`);
-      lines.push(`To:     ${v.addressed || '[Recipient]'}`);
-      lines.push(`Re:     ${v.subject || '[Subject]'}`);
-      lines.push('─'.repeat(50));
-      if (v.summary)         lines.push(`\nEXECUTIVE SUMMARY\n\n${v.summary}`);
-      if (v.body)            lines.push(`\nDETAILS\n\n${v.body}`);
-      if (v.conclusions)     lines.push(`\nCONCLUSIONS\n\n${v.conclusions}`);
-      if (v.recommendations) lines.push(`\nRECOMMENDATIONS\n\n${v.recommendations}`);
+      const type   = v.infringement_type || '[Copyright / Trademark]';
+      const client = v.client || '[client]';
+      const host   = v.host || '[Host name]';
+      const lines  = [];
+      lines.push(`Subject: ${type} infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`\nDear ${host}`);
+      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
+      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
+      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
+      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
+      lines.push(`\nYou may use the following contact information for any further correspondence:`);
+      lines.push(`${v.your_name || '[Your name]'}`);
+      lines.push(`160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)`);
+      lines.push(`${v.your_email || '[Your email address]'}`);
+      lines.push(`\nRegards`);
+      lines.push(`Signed:`);
+      lines.push(`${v.signature || '[Your initials and surname]'}`);
       return lines.join('\n');
     },
 
     renderHtml(v) {
-      const lines = [];
-      lines.push(hesc('REPORT: ') + fs('title', v.title, '[Title]'));
-      lines.push(hesc('Date:   ') + fs('date', v.date, '[Date]'));
-      lines.push(hesc('From:   ') + fs('author', v.author, '[Author]'));
-      lines.push(hesc('To:     ') + fs('addressed', v.addressed, '[Recipient]'));
-      lines.push(hesc('Re:     ') + fs('subject', v.subject, '[Subject]'));
-      lines.push(hesc('─'.repeat(50)));
-      if (v.summary)         lines.push('\n' + hesc('EXECUTIVE SUMMARY\n\n') + fs('summary', v.summary));
-      if (v.body)            lines.push('\n' + hesc('DETAILS\n\n') + fs('body', v.body));
-      if (v.conclusions)     lines.push('\n' + hesc('CONCLUSIONS\n\n') + fs('conclusions', v.conclusions));
-      if (v.recommendations) lines.push('\n' + hesc('RECOMMENDATIONS\n\n') + fs('recommendations', v.recommendations));
+      const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
+      const clientSpan = fs('client', v.client, '[client]');
+      const hostSpan   = fs('host', v.host, '[Host name]');
+      const lines      = [];
+      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push('\n' + hesc('Dear ') + hostSpan);
+      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website your company hosts may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
+      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
+      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
+      lines.push('\n' + hesc('You may use the following contact information for any further correspondence:'));
+      lines.push(fs('your_name', v.your_name, '[Your name]'));
+      lines.push(hesc('160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)'));
+      lines.push(fs('your_email', v.your_email, '[Your email address]'));
+      lines.push('\n' + hesc('Regards'));
+      lines.push(hesc('Signed:'));
+      lines.push(fs('signature', v.signature, '[Your initials and surname]'));
       return lines.join('\n');
-    },
-  },
-
-  // ── Email Report ────────────────────────────────────────────
-  {
-    id: 'email_report',
-    name: 'Email Report',
-    folder: 'General',
-
-    fields: [
-      { id:'to',      label:'To',      type:'email', placeholder:'recipient@example.com' },
-      { id:'cc',      label:'CC',      type:'email', placeholder:'optional' },
-      { id:'from',    label:'From',    type:'email', placeholder:'you@example.com', profileKey:'email' },
-      { id:'subject', label:'Subject', type:'text',  placeholder:'Weekly update \u2014 Week 42' },
-      { id:'date',    label:'Date',    type:'date' },
-      { _divider: true },
-      { id:'body', label:'Body', type:'textarea', placeholder:'Write your email here\u2026' },
-    ],
-
-    render(v) {
-      const lines = [];
-      lines.push(`To:      ${v.to || '[Recipient]'}`);
-      if (v.cc) lines.push(`CC:      ${v.cc}`);
-      lines.push(`From:    ${v.from || '[Sender]'}`);
-      lines.push(`Subject: ${v.subject || '[Subject]'}`);
-      lines.push(`Date:    ${v.date || '[Date]'}`);
-      lines.push('─'.repeat(50));
-      lines.push(`\n${v.body || '[Body]'}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const lines = [];
-      lines.push(hesc('To:      ') + fs('to', v.to, '[Recipient]'));
-      if (v.cc) lines.push(hesc('CC:      ') + fs('cc', v.cc));
-      lines.push(hesc('From:    ') + fs('from', v.from, '[Sender]'));
-      lines.push(hesc('Subject: ') + fs('subject', v.subject, '[Subject]'));
-      lines.push(hesc('Date:    ') + fs('date', v.date, '[Date]'));
-      lines.push(hesc('─'.repeat(50)));
-      lines.push('\n' + fs('body', v.body, '[Body]'));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Meeting Minutes ─────────────────────────────────────────
-  {
-    id: 'meeting_minutes',
-    name: 'Meeting Minutes',
-    folder: 'General',
-
-    fields: [
-      { id:'meeting',      label:'Meeting name',    type:'text',     placeholder:'Sprint Planning \u2014 Week 42' },
-      { id:'date',         label:'Date',            type:'date' },
-      { id:'location',     label:'Location / link', type:'text',     placeholder:'Room 3B / Zoom' },
-      { id:'facilitator',  label:'Facilitator',     type:'text',     placeholder:'Name', profileKey:'name' },
-      { id:'attendees',    label:'Attendees',       type:'list',     placeholder:'Name, role\u2026' },
-      { _divider: true },
-      { id:'agenda',       label:'Agenda items',   type:'list',     placeholder:'Item\u2026' },
-      { id:'notes',        label:'Notes',           type:'textarea', placeholder:'Key points\u2026' },
-      { id:'decisions',    label:'Decisions made',  type:'list',     placeholder:'Decision\u2026' },
-      { id:'actions',      label:'Action items',    type:'list',     placeholder:'Who does what by when\u2026' },
-      { id:'next_meeting', label:'Next meeting',    type:'text',     placeholder:'Date / time' },
-    ],
-
-    render(v) {
-      const lines = [];
-      lines.push(`MEETING MINUTES\n${'─'.repeat(50)}`);
-      lines.push(`Meeting:     ${v.meeting || '[Meeting name]'}`);
-      lines.push(`Date:        ${v.date || '[Date]'}`);
-      lines.push(`Location:    ${v.location || '[Location]'}`);
-      lines.push(`Facilitator: ${v.facilitator || '[Facilitator]'}`);
-      if (v.attendees?.length)  lines.push(`\nATTENDEES\n${v.attendees.map(a => `  \u2022 ${a}`).join('\n')}`);
-      if (v.agenda?.length)     lines.push(`\nAGENDA\n${v.agenda.map((a,i) => `  ${i+1}. ${a}`).join('\n')}`);
-      if (v.notes)              lines.push(`\nNOTES\n\n${v.notes}`);
-      if (v.decisions?.length)  lines.push(`\nDECISIONS\n${v.decisions.map(d => `  \u2022 ${d}`).join('\n')}`);
-      if (v.actions?.length)    lines.push(`\nACTION ITEMS\n${v.actions.map(a => `  \u2610 ${a}`).join('\n')}`);
-      if (v.next_meeting)       lines.push(`\nNEXT MEETING: ${v.next_meeting}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const lines = [];
-      lines.push(hesc('MEETING MINUTES\n') + hesc('─'.repeat(50)));
-      lines.push(hesc('Meeting:     ') + fs('meeting', v.meeting, '[Meeting name]'));
-      lines.push(hesc('Date:        ') + fs('date', v.date, '[Date]'));
-      lines.push(hesc('Location:    ') + fs('location', v.location, '[Location]'));
-      lines.push(hesc('Facilitator: ') + fs('facilitator', v.facilitator, '[Facilitator]'));
-      if (v.attendees?.length)  lines.push('\n' + hesc('ATTENDEES\n') + v.attendees.map(a => hesc('  \u2022 ') + fs('attendees', a)).join('\n'));
-      if (v.agenda?.length)     lines.push('\n' + hesc('AGENDA\n') + v.agenda.map((a,i) => hesc(`  ${i+1}. `) + fs('agenda', a)).join('\n'));
-      if (v.notes)              lines.push('\n' + hesc('NOTES\n\n') + fs('notes', v.notes));
-      if (v.decisions?.length)  lines.push('\n' + hesc('DECISIONS\n') + v.decisions.map(d => hesc('  \u2022 ') + fs('decisions', d)).join('\n'));
-      if (v.actions?.length)    lines.push('\n' + hesc('ACTION ITEMS\n') + v.actions.map(a => hesc('  \u2610 ') + fs('actions', a)).join('\n'));
-      if (v.next_meeting)       lines.push('\n' + hesc('NEXT MEETING: ') + fs('next_meeting', v.next_meeting));
-      return lines.join('\n');
-    },
-  },
+    }
+  }
 
 ];
 
