@@ -533,9 +533,78 @@ const TEMPLATES = [
       lines.push('\n' + hesc('You may use the following email address for any further correspondence: ') + fs('your_email', v.your_email, '[your email address]'));
       lines.push('\n' + hesc('Regards'));
       return lines.join('\n');
+    },
+  },
+
+  // ── Registrar Infringement Notice ─────────────────────────────
+  {
+    id: 'registrar_infringement',
+    name: 'Registrar Infringement Notice',
+    folder: 'Legal Notices',
+
+    onLoad(fv) {
+      const p = getProfile();
+      if (!fv.your_name && p.name) fv.your_name = p.name;
+      if (!fv.your_email && p.email) fv.your_email = p.email;
+    },
+
+    fields: [
+      { id:'infringement_type',label:'Infringement type',      type:'select',     options:['Copyright','Trademark','Copyright and Trademark'] },
+      { id:'registrar',        label:'Registrar',              type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
+      { id:'client',           label:'Client',                 type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
+      { _divider: true },
+      { id:'infringing_url',   label:'Infringing website URL', type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
+      { id:'client_url',       label:"Client's original website", type:'text',    placeholder:'https://client-brand.com' },
+      { id:'infringement_desc',label:'What was infringed',     type:'textarea',   placeholder:'e.g. logo and name to provide a similar product...' },
+      { _divider: true },
+      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' },
+      { id:'your_email',       label:'Your email address',     type:'email',      placeholder:'jane@phishfort.com', profileKey:'email' },
+      { id:'signature',        label:'Signature',              type:'text',       placeholder:'J.M. Smith', hint:'Your initials and surname' }
+    ],
+
+    render(v) {
+      const type   = v.infringement_type || '[Copyright / Trademark]';
+      const client = v.client || '[client]';
+      const reg    = v.registrar || '[Registrar name]';
+      const lines  = [];
+      lines.push(`Subject: ${type} infringement in relation to ${v.infringing_url || '[infringing website]'}`);
+      lines.push(`\nDear ${reg}`);
+      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website for which your company is the registrar may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
+      lines.push(`\nThe infringing material is found at: ${v.infringing_url || '[infringer website]'}`);
+      lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
+      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
+      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
+      lines.push(`\nYou may use the following contact information for any further correspondence:`);
+      lines.push(`${v.your_name || '[Your name]'}`);
+      lines.push(`PhishFort, 160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)`);
+      lines.push(`${v.your_email || '[Your email address]'}`);
+      lines.push(`\nRegards`);
+      lines.push(`Signed: ${v.signature || '[Your initials and surname]'}`);
+      return lines.join('\n');
+    },
+
+    renderHtml(v) {
+      const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
+      const clientSpan = fs('client', v.client, '[client]');
+      const regSpan    = fs('registrar', v.registrar, '[Registrar name]');
+      const lines      = [];
+      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', v.infringing_url, '[infringing website]'));
+      lines.push('\n' + hesc('Dear ') + regSpan);
+      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website for which your company is the registrar may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
+      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', v.infringing_url, '[infringer website]'));
+      lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
+      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
+      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
+      lines.push('\n' + hesc('You may use the following contact information for any further correspondence:'));
+      lines.push(fs('your_name', v.your_name, '[Your name]'));
+      lines.push(hesc('PhishFort, 160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)'));
+      lines.push(fs('your_email', v.your_email, '[Your email address]'));
+      lines.push('\n' + hesc('Regards'));
+      lines.push(hesc('Signed: ') + fs('signature', v.signature, '[Your initials and surname]'));
+      return lines.join('\n');
     }
   }
-  
+
 ];
 
 const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
