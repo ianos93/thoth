@@ -607,20 +607,26 @@ document.getElementById('btn-import-confirm').addEventListener('click', () => {
     return;
   }
 
-  const regex = /\[(.*?)\]|\<(.*?)\>|\{(?!\{)(.*?)(?!\})\}/g;
+  // Enhanced Regex to catch: {{...}}, [[...]], [...], <...>, and {...}
+  const regex = /\{\{(.*?)\}\}|\[\[(.*?)\]\]|\[(.*?)\]|\<(.*?)\>|\{(.*?)\}/g;
   let parsedOutput = rawText;
   let match;
+  
+  // Keep track of IDs to avoid making duplicate fields
   const existingIds = new Set(bld.fields.map(f => f.id));
 
   while ((match = regex.exec(rawText)) !== null) {
-    const rawLabel = match[1] || match[2] || match[3]; 
-    if (!rawLabel) continue;
+    // Find which bracket type matched
+    const rawLabel = match[1] || match[2] || match[3] || match[4] || match[5]; 
+    if (!rawLabel || !rawLabel.trim()) continue;
 
     const cleanLabel = rawLabel.replace(/^insert /i, '').trim();
     const id = labelToId(cleanLabel);
 
-    parsedOutput = parsedOutput.replace(match[0], `{{${id}}}`);
+    // Replace all occurrences of this exact placeholder with the {{token}}
+    parsedOutput = parsedOutput.split(match[0]).join(`{{${id}}}`);
 
+    // Create the field if it doesn't exist yet
     if (!existingIds.has(id)) {
       bld.fields.push({
         id: id,
