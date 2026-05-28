@@ -1123,10 +1123,10 @@ function updateOutput(){
   let subjectHtml = '';
   let bodyHtml = finalHtml;
   
-  // Find the first line with actual text
+// Find the first line with actual text
   let firstLineIdx = lines.findIndex(l => l.trim() !== '');
   if (firstLineIdx !== -1) {
-    let firstLineText = lines[firstLineIdx].replace(/<[^>]+>/g, '').trim(); // Strip HTML to check text
+    let firstLineText = lines[firstLineIdx].replace(/<[^>]+>/g, '').trim(); 
     if (firstLineText.match(/^(Subject line:|Subject:|REPORT:)/i)) {
       // Strip the literal "Subject:" label so it copies cleanly
       subjectHtml = lines[firstLineIdx].replace(/^(<[^>]+>)*\s*(Subject line:|Subject:|REPORT:)\s*/i, '$1');
@@ -1138,15 +1138,19 @@ function updateOutput(){
     }
   }
 
-  // Render the split UI if a subject exists
+  // VITAL FIX: Forcefully strip all rogue newlines/spaces at the start and end of the chunks
+  subjectHtml = subjectHtml.trim();
+  bodyHtml = bodyHtml.trim();
+
+  // Render the split UI if a subject exists (with tighter margins)
   if (subjectHtml) {
     otEl.innerHTML = `
-      <div style="padding-bottom:16px; border-bottom:1px dashed var(--b); margin-bottom:16px;">
-        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:8px;">Subject</div>
+      <div style="padding-bottom:12px; border-bottom:1px dashed var(--b); margin-bottom:12px;">
+        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Subject</div>
         <div id="val-subj">${subjectHtml}</div>
       </div>
       <div>
-        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:8px;">Body</div>
+        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Body</div>
         <div id="val-body">${bodyHtml}</div>
       </div>
     `;
