@@ -249,6 +249,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
       <button class="btn btn-ghost" id="btn-edit-tmpl" style="display:none">✏ Edit template</button>
       <button class="btn btn-ghost" id="btn-clear">Clear</button>
       <button class="btn btn-ghost" id="btn-save-draft">Save draft</button>
+      <button class="btn btn-primary" id="btn-copy-subj" style="display:none">Copy Subject</button>
       <button class="btn btn-primary" id="btn-copy">Copy to clipboard</button>
     </div>
   </div>
@@ -1106,13 +1107,57 @@ function updateOutput(){
   const rv={};
   Object.entries(fieldValues).forEach(([k,v])=>{rv[k]=Array.isArray(v)?v.filter(s=>s.trim()!==''):v;});
   const otEl=document.getElementById('out-text');
+  
+  let finalHtml = '';
   if(curTmpl.renderHtml){
-    otEl.innerHTML=curTmpl.renderHtml(rv);
+    finalHtml = curTmpl.renderHtml(rv);
   } else {
-    // User templates: use renderHtml generated at load time, or fall back to escaped plain text
-    const plain=curTmpl.render(rv);
-    otEl.innerHTML=renderUserTemplateHtml(curTmpl._ut||{outputTemplate:plain,fields:curTmpl.fields||[]},rv);
+    const plain = curTmpl.render(rv);
+    finalHtml = renderUserTemplateHtml(curTmpl._ut||{outputTemplate:plain,fields:curTmpl.fields||[]},rv);
   }
+  
+  const btnCopySubj = document.getElementById('btn-copy-subj');
+  const btnCopy = document.getElementById('btn-copy');
+  
+  let lines = finalHtml.split('\n');
+  let subjectHtml = '';
+  let bodyHtml = finalHtml;
+  
+  // Find the first line with actual text
+  let firstLineIdx = lines.findIndex(l => l.trim() !== '');
+  if (firstLineIdx !== -1) {
+    let firstLineText = lines[firstLineIdx].replace(/<[^>]+>/g, '').trim(); // Strip HTML to check text
+    if (firstLineText.match(/^(Subject line:|Subject:|REPORT:)/i)) {
+      // Strip the literal "Subject:" label so it copies cleanly
+      subjectHtml = lines[firstLineIdx].replace(/^(<[^>]+>)*\s*(Subject line:|Subject:|REPORT:)\s*/i, '$1');
+      
+      // Remove subject and any blank lines directly under it from the body
+      lines.splice(0, firstLineIdx + 1);
+      while(lines.length > 0 && lines[0].trim() === '') lines.shift();
+      bodyHtml = lines.join('\n');
+    }
+  }
+
+  // Render the split UI if a subject exists
+  if (subjectHtml) {
+    otEl.innerHTML = `
+      <div style="padding-bottom:16px; border-bottom:1px dashed var(--b); margin-bottom:16px;">
+        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:8px;">Subject</div>
+        <div id="val-subj">${subjectHtml}</div>
+      </div>
+      <div>
+        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:8px;">Body</div>
+        <div id="val-body">${bodyHtml}</div>
+      </div>
+    `;
+    if (btnCopySubj) btnCopySubj.style.display = '';
+    if (btnCopy) btnCopy.textContent = 'Copy Body';
+  } else {
+    otEl.innerHTML = `<div id="val-body">${bodyHtml}</div>`;
+    if (btnCopySubj) btnCopySubj.style.display = 'none';
+    if (btnCopy) btnCopy.textContent = 'Copy to clipboard';
+  }
+  
   otEl.style.display='block';
 }
 
@@ -1120,7 +1165,9 @@ function updateOutput(){
 // TOOLBAR
 // ═══════════════════════════════════════════════
 document.getElementById('btn-copy').addEventListener('click',()=>{
-  const text=document.getElementById('out-text').innerText;
+  // Safely target the body, or fallback to the whole text area
+  const target = document.getElementById('val-body') || document.getElementById('out-text');
+  const text = target.innerText;
   if(!text||text.startsWith('Select a template')) return;
   navigator.clipboard.writeText(text).then(()=>{
     const b=document.getElementById('btn-copy'),orig=b.textContent;
@@ -1128,6 +1175,20 @@ document.getElementById('btn-copy').addEventListener('click',()=>{
     setTimeout(()=>{b.textContent=orig;b.style.cssText='';},1800);
   });
 });
+
+const btnCopySubj = document.getElementById('btn-copy-subj');
+if(btnCopySubj) {
+  btnCopySubj.addEventListener('click',()=>{
+    const target = document.getElementById('val-subj');
+    if(!target) return;
+    navigator.clipboard.writeText(target.innerText).then(()=>{
+      const orig = btnCopySubj.textContent;
+      btnCopySubj.textContent = 'Copied!'; 
+      btnCopySubj.style.cssText = 'background:#4ade80;border-color:#4ade80;color:#111;';
+      setTimeout(()=>{btnCopySubj.textContent=orig;btnCopySubj.style.cssText='';},1800);
+    });
+  });
+}
 document.getElementById('btn-clear').addEventListener('click',()=>{
   if(!curTmpl) return; fieldValues={};
   if(curTmpl.onLoad) curTmpl.onLoad(fieldValues);
