@@ -1,931 +1,1286 @@
-// ═══════════════════════════════════════════════════════════════
-// templates.js — built-in template definitions
-// Place in the same folder as index.html
-// ═══════════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Organizer</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFjMWMxYSIvPgogIDxyZWN0IHg9IjUiIHk9IjgiIHdpZHRoPSIxNCIgaGVpZ2h0PSIyIiByeD0iMSIgZmlsbD0iI2M4ZjA0YSIvPgogIDxyZWN0IHg9IjUiIHk9IjEzIiB3aWR0aD0iMTAiIGhlaWdodD0iMiIgcng9IjEiIGZpbGw9IiNjOGYwNGEiLz4KICA8cmVjdCB4PSI1IiB5PSIxOCIgd2lkdGg9IjEyIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjYzhmMDRhIi8+CiAgPHJlY3QgeD0iNSIgeT0iMjMiIHdpZHRoPSI4IiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjM2QzZDM5Ii8+CiAgPHJlY3QgeD0iMjIiIHk9IjgiIHdpZHRoPSI1IiBoZWlnaHQ9IjE3IiByeD0iMSIgZmlsbD0iIzJlMmUyYiIgc3Ryb2tlPSIjM2QzZDM5IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8cmVjdCB4PSIyMyIgeT0iMTEiIHdpZHRoPSIzIiBoZWlnaHQ9IjEuNSIgcng9IjAuNSIgZmlsbD0iIzhmYWEzMyIvPgogIDxyZWN0IHg9IjIzIiB5PSIxNCIgd2lkdGg9IjMiIGhlaWdodD0iMS41IiByeD0iMC41IiBmaWxsPSIjOGZhYTMzIi8+CiAgPHJlY3QgeD0iMjMiIHk9IjE3IiB3aWR0aD0iMyIgaGVpZ2h0PSIxLjUiIHJ4PSIwLjUiIGZpbGw9IiM4ZmFhMzMiLz4KICA8cmVjdCB4PSIyMyIgeT0iMjAiIHdpZHRoPSIzIiBoZWlnaHQ9IjEuNSIgcng9IjAuNSIgZmlsbD0iIzNkM2QzOSIvPgo8L3N2Zz4=">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#111110;--surface:#1c1c1a;--sr:#232320;
+  --b:#2e2e2b;--bs:#3d3d39;
+  --t:#e8e5de;--tm:#8f8c84;--tf:#5a5852;
+  --ac:#c8f04a;--ad:#8faa33;--ab:#1f2710;--at:#c8f04a;
+  --r:7px;--sw:230px;
+}
+html,body{height:100%;}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--t);display:flex;overflow:hidden;height:100vh;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bs);border-radius:3px;}
 
-const today  = () => new Date().toISOString().slice(0, 10);
-const nowUtc = () => new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+/* ── Sidebar ── */
+#sb{width:var(--sw);min-width:var(--sw);background:var(--surface);border-right:1px solid var(--b);display:flex;flex-direction:column;overflow:hidden;}
+#sb-head{padding:18px 14px 12px;border-bottom:1px solid var(--b);}
+#sb-head h1{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tm);margin-bottom:10px;}
+#search-box{width:100%;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t);border:1px solid var(--bs);border-radius:var(--r);padding:7px 10px;outline:none;}
+#search-box::placeholder{color:var(--tf);}
+#search-box:focus{border-color:var(--ad);}
+#tree{flex:1;overflow-y:auto;padding:8px 6px;}
+.folder-block{margin-bottom:4px;}
+.folder-hdr{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--r);cursor:pointer;user-select:none;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);}
+.folder-hdr:hover{color:var(--tm);}
+.folder-hdr:hover .fh-ctrl{opacity:1;}
+.folder-arrow{font-size:9px;transition:transform .15s;flex-shrink:0;}
+.folder-block.collapsed .folder-arrow{transform:rotate(-90deg);}
+.folder-block.collapsed .folder-kids{display:none;}
+.folder-kids{padding-left:8px;}
+.fh-ctrl{opacity:0;display:flex;gap:2px;margin-left:auto;}
+.fh-btn{background:none;border:none;color:var(--tf);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;line-height:1;}
+.fh-btn:hover{color:var(--t);background:var(--bs);}
+.fh-btn.del:hover{color:#f87171;}
+.ti{padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--tm);display:flex;align-items:center;gap:6px;user-select:none;overflow:hidden;}
+.ti:hover{background:var(--sr);color:var(--t);}
+.ti.active{background:var(--ab);color:var(--at);font-weight:500;}
+.ti .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.6;flex-shrink:0;}
+.ti.active .dot{opacity:1;}
+.ti-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ti-ctrl{opacity:0;display:flex;gap:2px;flex-shrink:0;}
+.ti:hover .ti-ctrl{opacity:1;}
+.ti-btn{background:none;border:none;color:var(--tf);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;line-height:1;}
+.ti-btn:hover{color:var(--t);background:var(--bs);}
+.ti-btn.del:hover{color:#f87171;}
+.no-results{font-size:12px;color:var(--tf);padding:10px;}
+#tree-actions{border-top:1px solid var(--b);padding:6px 8px;display:flex;gap:4px;}
+.tree-act-btn{font-family:inherit;font-size:11px;padding:5px 8px;border-radius:var(--r);border:1px solid var(--bs);background:transparent;color:var(--tm);cursor:pointer;flex:1;text-align:center;}
+.tree-act-btn:hover{background:var(--sr);color:var(--t);}
+#drafts-sec{border-top:1px solid var(--b);padding:6px;max-height:160px;overflow-y:auto;}
+#drafts-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);padding:4px 8px 6px;}
+.draft-item{padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--tm);display:flex;align-items:center;justify-content:space-between;gap:4px;}
+.draft-item:hover{background:var(--sr);color:var(--t);}
+.draft-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.draft-del{background:none;border:none;cursor:pointer;color:var(--tf);font-size:15px;padding:0 2px;line-height:1;flex-shrink:0;opacity:0;}
+.draft-item:hover .draft-del{opacity:1;}
+.draft-del:hover{color:#f87171;}
+#sb-foot{border-top:1px solid var(--b);padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+#sb-foot-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);padding:0 2px 2px;}
+.foot-btn{font-family:inherit;font-size:12px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--bs);background:transparent;color:var(--tm);cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;}
+.foot-btn:hover{background:var(--sr);color:var(--t);}
 
-function sanitizeUrl(raw) {
-  if (!raw) return raw;
-  return raw
-    .replace(/^https?:\/\//i, m => m.replace(/https/i,'hxxps').replace(/http/i,'hxxp').replace(':', '[:]'))
-    .replace(/\./g, '[.]');
+/* ── Main ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#toolbar{background:var(--surface);border-bottom:1px solid var(--b);padding:11px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;}
+#tmpl-title{font-size:14px;font-weight:600;color:var(--t);}
+#tb-actions{display:flex;gap:6px;align-items:center;}
+.btn{font-family:inherit;font-size:12px;padding:6px 13px;border-radius:var(--r);border:1px solid var(--bs);background:var(--sr);color:var(--tm);cursor:pointer;white-space:nowrap;}
+.btn:hover{background:var(--b);color:var(--t);}
+.btn-primary{background:var(--ac);border-color:var(--ac);color:#111;font-weight:600;}
+.btn-primary:hover{background:#d9ff5c;border-color:#d9ff5c;}
+.btn-ghost{border-color:transparent;background:transparent;}
+.btn-ghost:hover{background:var(--sr);color:var(--t);}
+.btn-active{background:var(--ab)!important;border-color:var(--ad)!important;color:var(--at)!important;}
+
+/* ── Content ── */
+#content{flex:1;display:flex;overflow:hidden;position:relative;}
+#form-panel{width:340px;min-width:260px;border-right:1px solid var(--b);background:var(--surface);display:flex;flex-direction:column;overflow:hidden;order:2;}
+#out-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;order:1;}
+#out-head{padding:10px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:var(--surface);}
+#out-head span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);}
+#out-text{flex:1;overflow-y:auto;padding:22px 28px;font-family:'Courier New',monospace;font-size:13px;line-height:1.75;color:var(--tm);white-space:pre-wrap;word-break:break-all;}
+.out-field{cursor:pointer;border-radius:3px;padding:1px 3px;margin:0 -3px;background:rgba(200,240,74,.13);color:var(--ac);transition:background .15s;}
+.out-field:hover{background:rgba(200,240,74,.30);color:var(--ac);}
+@keyframes border-flash{0%{border-left-color:transparent}20%,100%{border-left-color:var(--ac)}}
+@keyframes text-flash{0%{color:var(--tf)}20%,100%{color:var(--ac)}}
+@keyframes box-flash{0%{border-color:var(--bs)}20%,100%{border-color:var(--ad)}}
+.field-flash{animation:border-flash .8s ease-out;}
+.field-flash label{animation:text-flash .8s ease-out;}
+.field-flash input, .field-flash select, .field-flash textarea{animation:box-flash .8s ease-out;}
+#fields-container{flex:1;overflow-y:auto;padding:20px 18px;}
+
+/* ── Overlay panels ── */
+.overlay{display:none;position:absolute;top:0;left:0;bottom:0;right:340px;background:var(--bg);overflow-y:auto;padding:26px 30px;z-index:10;}
+.overlay.open{display:block;}
+
+/* Lists */
+.ltabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--b);}
+.ltab{font-size:13px;padding:8px 14px;cursor:pointer;color:var(--tm);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;}
+.ltab:hover{color:var(--t);}
+.ltab.active{color:var(--at);border-bottom-color:var(--ac);}
+.lpane{display:none;}
+.lpane.active{display:block;}
+.sec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);margin-bottom:12px;}
+.l-entries{margin-bottom:14px;max-height:260px;overflow-y:auto;border:1px solid var(--b);border-radius:var(--r);padding:6px;}
+.l-row{display:flex;gap:6px;align-items:center;padding:2px 0;}
+.l-row input{flex:1;background:transparent;border:none;border-bottom:1px solid transparent;border-radius:0;padding:5px 6px;font-size:13px;color:var(--t);}
+.l-row input:focus{outline:none;border-bottom-color:var(--ad);}
+.l-rem{background:none;border:none;color:var(--tf);cursor:pointer;font-size:15px;width:26px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:4px;}
+.l-rem:hover{color:#f87171;background:rgba(248,113,113,.08);}
+.l-empty{font-size:12px;color:var(--tf);padding:8px 6px;}
+.l-add{display:flex;gap:8px;align-items:center;}
+.l-add input{flex:1;}
+.upload-zone{display:flex;flex-direction:column;align-items:center;gap:6px;border:1px dashed var(--bs);border-radius:var(--r);padding:14px 18px;margin-top:14px;cursor:pointer;color:var(--tf);font-size:13px;text-align:center;}
+.upload-zone:hover{border-color:var(--ad);color:var(--tm);}
+.upload-zone input{display:none;}
+.upload-zone small{font-size:11px;color:var(--tf);}
+.info-box{background:var(--surface);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--tm);line-height:1.6;margin-bottom:16px;}
+.info-box a{color:var(--ad);text-decoration:none;}
+.info-box a:hover{text-decoration:underline;color:var(--at);}
+.def-btn{font-family:inherit;font-size:12px;color:var(--ad);background:none;border:none;cursor:pointer;padding:0;margin-bottom:14px;}
+.def-btn:hover{color:var(--at);text-decoration:underline;}
+
+/* Profile */
+.prof-row{margin-bottom:14px;}
+.prof-row label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);margin-bottom:6px;}
+.prof-row input{width:100%;font-size:13px;font-family:inherit;color:var(--t);background:var(--surface);border:1px solid var(--bs);border-radius:var(--r);padding:8px 11px;outline:none;}
+.prof-row input:focus{border-color:var(--ad);}
+.prof-hint{font-size:11px;color:var(--tf);margin-top:14px;line-height:1.6;}
+
+/* Builder */
+.bld-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;}
+.bld-hdr-title{font-size:15px;font-weight:600;}
+.bld-hdr-btns{display:flex;gap:6px;}
+.bld-sec{margin-bottom:28px;}
+.bld-sec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--b);}
+.bld-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0;}
+.bld-fg{margin-bottom:0;}
+.bld-fg label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);margin-bottom:6px;}
+.bld-folder-row{display:flex;gap:6px;}
+.bld-folder-row select{flex:1;}
+/* Field cards */
+.bfc{border:1px solid var(--b);border-radius:var(--r);margin-bottom:6px;overflow:hidden;}
+.bfc-divider{border-style:dashed;}
+.bfc-main{display:flex;align-items:center;gap:6px;padding:8px 10px;}
+.bfc-mv{display:flex;gap:2px;}
+.bfc-mv button,.bfc-remove,.bfc-toggle{background:none;border:1px solid var(--bs);border-radius:4px;color:var(--tf);cursor:pointer;font-size:11px;padding:2px 6px;line-height:1.4;font-family:inherit;}
+.bfc-mv button:hover,.bfc-toggle:hover{background:var(--sr);color:var(--t);}
+.bfc-remove:hover{color:#f87171;border-color:#f87171;}
+.bfc-label-inp{flex:1;font-size:13px;font-family:inherit;color:var(--t);background:var(--sr);border:1px solid var(--bs);border-radius:4px;padding:5px 8px;outline:none;min-width:0;}
+.bfc-label-inp:focus{border-color:var(--ad);}
+.bfc-type-sel{font-size:12px;font-family:inherit;color:var(--t);background:var(--surface);border:1px solid var(--bs);border-radius:4px;padding:5px 24px 5px 8px;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%235a5852'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;}
+.bfc-type-sel:focus{border-color:var(--ad);}
+.bfc-divlbl{color:var(--tf);font-size:12px;flex:1;font-family:'Courier New',monospace;}
+.bfc-extra{display:none;padding:10px 12px 12px;border-top:1px solid var(--b);background:var(--surface);}
+.bfc-extra.open{display:block;}
+.bfc-eg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.bfc-eg{display:flex;flex-direction:column;gap:4px;}
+.bfc-eg.full{grid-column:1/-1;}
+.bfc-eg label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);}
+.bfc-eg input,.bfc-eg select{font-size:12px;font-family:inherit;color:var(--t);background:var(--bg);border:1px solid var(--bs);border-radius:4px;padding:5px 8px;outline:none;}
+.bfc-eg select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%235a5852'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px;}
+.bfc-eg input:focus,.bfc-eg select:focus{border-color:var(--ad);}
+.bfc-hidden{display:none!important;}
+.bld-add-btns{display:flex;gap:8px;margin-top:8px;}
+/* Tokens */
+.bld-tokens{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:24px;}
+.bld-token{background:var(--ab);color:var(--at);font-family:'Courier New',monospace;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;border:1px solid var(--b);}
+.bld-token:hover{background:var(--bs);}
+.bld-out-hint{font-size:11px;color:var(--tf);margin-top:6px;line-height:1.5;}
+
+/* Form fields */
+.fg{margin-bottom:20px;border-left:2px solid transparent;padding-left:6px;margin-left:-8px;transition:border-color .2s ease;}
+.fg-lrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.fg-lrow label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);transition:color .2s ease;}
+.fg:focus-within{border-left-color:var(--ac);}
+.fg:focus-within label{color:var(--ac);}
+.fg-badge{font-size:10px;color:var(--ad);}
+.f-hint{font-size:11px;color:var(--tf);margin-top:4px;line-height:1.4;}
+.f-san{font-size:11px;color:var(--ad);margin-top:3px;font-family:'Courier New',monospace;word-break:break-all;}
+input[type="text"],input[type="email"],input[type="date"],select,textarea{width:100%;font-size:13px;font-family:inherit;color:var(--t);background:var(--surface);border:1px solid var(--bs);border-radius:var(--r);padding:8px 11px;outline:none;}
+input[type="text"]:focus,input[type="email"]:focus,input[type="date"]:focus,select:focus,textarea:focus{border-color:var(--ad);}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.6);}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5852'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+textarea{resize:vertical;min-height:90px;line-height:1.5;}
+.lp-wrap{display:flex;flex-direction:column;gap:6px;}
+.lp-custom{display:none;}
+.lp-custom.show{display:block;}
+.lf-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+.lf-row input{flex:1;}
+.btn-icon{background:none;border:1px solid var(--bs);border-radius:var(--r);color:var(--tf);cursor:pointer;font-size:16px;line-height:1;width:32px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.btn-icon:hover{background:var(--sr);color:var(--t);}
+.btn-icon.rem:hover{color:#f87171;border-color:#f87171;}
+.add-row-btn{font-family:inherit;font-size:12px;color:var(--ad);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px;}
+.add-row-btn:hover{color:var(--at);}
+.f-divider{border:none;border-top:1px solid var(--b);margin:6px 0 22px;}
+#empty-state{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--tf);}
+#empty-state p{font-size:13px;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--sr);border:1px solid var(--bs);border-radius:var(--r);padding:10px 16px;font-size:13px;color:var(--t);z-index:999;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+/* Custom Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.show{display:flex;}
+.modal-content{background:var(--surface);border:1px solid var(--b);border-radius:var(--r);width:600px;max-width:95%;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+.modal-header{padding:14px 18px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600;color:var(--t);}
+.modal-body{padding:18px;display:flex;flex-direction:column;}
+.modal-footer{padding:14px 18px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--bg);border-radius:0 0 var(--r) var(--r);}
+#import-textarea{width:100%;font-size:13px;font-family:inherit;color:var(--t);background:var(--bg);border:1px solid var(--bs);border-radius:4px;padding:10px;outline:none;resize:vertical;}
+#import-textarea:focus{border-color:var(--ad);}
+</style>
+<script src="templates.js"></script>
+</head>
+<body>
+
+<div id="sb">
+  <div id="sb-head">
+    <h1>Templates</h1>
+    <input id="search-box" type="text" placeholder="Search templates…" autocomplete="off">
+  </div>
+  <div id="tree"></div>
+  <div id="tree-actions">
+    <button class="tree-act-btn" id="btn-new-tmpl">＋ New template</button>
+    <button class="tree-act-btn" id="btn-new-folder">＋ Folder</button>
+  </div>
+  <div id="drafts-sec">
+    <div id="drafts-label">Saved drafts</div>
+    <div id="draft-list"></div>
+  </div>
+  <div id="sb-foot">
+    <div id="sb-foot-label">Data</div>
+    <button class="foot-btn" id="btn-export">💾 Export save file</button>
+    <label class="foot-btn" style="cursor:pointer;">📂 Import save file<input type="file" id="import-file" accept=".json" style="display:none"></label>
+  </div>
+</div>
+
+<div id="main">
+  <div id="toolbar">
+    <span id="tmpl-title">—</span>
+    <div id="tb-actions">
+      <button class="btn btn-ghost" id="btn-profile">👤 Profile</button>
+      <button class="btn btn-ghost" id="btn-lists">⚙ Lists</button>
+      <button class="btn btn-ghost" id="btn-dupe-tmpl" style="display:none">⎘ Duplicate</button>
+      <button class="btn btn-ghost" id="btn-edit-tmpl" style="display:none">✏ Edit template</button>
+      <button class="btn btn-ghost" id="btn-clear">Clear</button>
+      <button class="btn btn-ghost" id="btn-save-draft">Save draft</button>
+      <button class="btn btn-primary" id="btn-copy-subj" style="display:none">Copy Subject</button>
+      <button class="btn btn-primary" id="btn-copy">Copy to clipboard</button>
+    </div>
+  </div>
+  <div id="content">
+
+    <div id="out-panel">
+      <div id="out-head"><span>Report output</span></div>
+      <div id="empty-state"><p>Select a template from the sidebar.</p></div>
+      <div id="out-text" style="display:none;"></div>
+    </div>
+
+    <div id="form-panel">
+      <div id="fields-container" style="display:none;"></div>
+    </div>
+
+    <!-- Profile -->
+    <div id="profile-panel" class="overlay">
+      <div class="bld-sec-title" style="margin-bottom:18px;">Your profile</div>
+      <div class="prof-row"><label>Company name</label><input type="text" id="pf-company" placeholder="Acme Security Inc."></div>
+      <div class="prof-row"><label>Your name</label><input type="text" id="pf-name" placeholder="Jane Smith"></div>
+      <div class="prof-row"><label>Email</label><input type="text" id="pf-email" placeholder="jane@acmesec.com"></div>
+      <div class="prof-row"><label>Role / title</label><input type="text" id="pf-role" placeholder="Abuse Operations Analyst"></div>
+      <div class="prof-row"><label>Department</label><input type="text" id="pf-dept" placeholder="Abuse Operations"></div>
+      <button class="btn btn-primary" id="btn-save-profile">Save profile</button>
+      <div class="prof-hint">Fields with a "from profile" badge in templates are pre-filled automatically. You can always override them per report.</div>
+    </div>
+
+    <!-- Lists -->
+    <div id="lists-panel" class="overlay">
+      <div class="ltabs">
+        <button class="ltab active" data-tab="registrars">Registrars</button>
+        <button class="ltab" data-tab="hosts">Hosting Providers</button>
+        <button class="ltab" data-tab="clients">Clients</button>
+      </div>
+      <div id="pane-registrars" class="lpane active">
+        <div class="info-box">ICANN publishes the full registrar list as a CSV, updated daily.<br><a href="https://www.icann.org/en/contracted-parties/accredited-registrars/list-of-accredited-registrars" target="_blank">↗ Open ICANN registrar page</a> → "Download results to .csv file" → upload below.</div>
+        <div class="sec-title">Saved registrars</div>
+        <div class="l-entries" id="entries-registrars"></div>
+        <div class="l-add" style="margin-bottom:12px;"><input type="text" id="add-registrars" placeholder="Add registrar…"><button class="btn" id="addbtn-registrars">Add</button></div>
+        <label class="upload-zone"><input type="file" id="csv-registrars" accept=".csv,.txt"><span>📄 Upload ICANN .csv</span><small>Parses registrar names. Duplicates skipped.</small></label>
+      </div>
+      <div id="pane-hosts" class="lpane">
+        <button class="def-btn" id="load-default-hosts">+ Load common hosting providers</button>
+        <div class="sec-title">Saved hosting providers</div>
+        <div class="l-entries" id="entries-hosts"></div>
+        <div class="l-add"><input type="text" id="add-hosts" placeholder="Add hosting provider…"><button class="btn" id="addbtn-hosts">Add</button></div>
+      </div>
+      <div id="pane-clients" class="lpane">
+        <div class="sec-title">Saved clients</div>
+        <div class="l-entries" id="entries-clients"></div>
+        <div class="l-add" style="margin-bottom:12px;"><input type="text" id="add-clients" placeholder="Add client…"><button class="btn" id="addbtn-clients">Add</button></div>
+        <label class="upload-zone"><input type="file" id="txt-clients" accept=".txt"><span>📄 Upload .txt file</span><small>One client per line. Existing entries kept.</small></label>
+      </div>
+    </div>
+
+    <!-- Builder -->
+    <div id="builder-panel" class="overlay">
+      <div class="bld-hdr">
+        <span class="bld-hdr-title" id="bld-title">New Template</span>
+        <div class="bld-hdr-btns">
+          <button class="btn btn-ghost" id="btn-bld-import" style="color: var(--ac); border-color: var(--bs);">✨ Paste Raw Text</button>
+          <button class="btn btn-ghost" id="btn-bld-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-bld-save">Save template</button>
+        </div>
+      </div>
+
+      <div class="bld-sec">
+        <div class="bld-sec-title">Template info</div>
+        <div class="bld-meta">
+          <div class="bld-fg"><label>Template name</label><input type="text" id="bld-name" placeholder="My Template" style="width:100%;margin-top:6px;"></div>
+          <div class="bld-fg"><label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);margin-bottom:6px;">Folder</label>
+            <div class="bld-folder-row"><select id="bld-folder"></select><button class="btn" id="btn-bld-new-folder">+ New</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bld-sec">
+        <div class="bld-sec-title">Fields</div>
+        <div id="bld-fields-list"></div>
+        <div class="bld-add-btns">
+          <button class="btn" id="btn-bld-add-field">+ Add field</button>
+          <button class="btn" id="btn-bld-add-divider">+ Add divider</button>
+        </div>
+      </div>
+
+      <div class="bld-sec">
+        <div class="bld-sec-title">Output template</div>
+        <div style="font-size:11px;color:var(--tf);margin-bottom:8px;">Click a token to insert at cursor:</div>
+        <div class="bld-tokens" id="bld-tokens"></div>
+        <textarea id="bld-output" rows="16" placeholder="Use {{field_id}} to insert field values. E.g.&#10;&#10;Dear {{registrar}} Abuse Team,&#10;&#10;We are writing regarding {{offending_domain}}...&#10;&#10;Sincerely,&#10;{{company_name}}"></textarea>
+        <div class="bld-out-hint">Tip: Use {{today}} for today's date and {{timestamp}} for the current UTC time.</div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+<div id="import-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">✨ Auto-Generate from Text</div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--tf);margin-bottom:12px;">Paste your raw email/template text here. The tool will look for anything inside brackets like [this] and automatically convert them into fields:</p>
+      <textarea id="import-textarea" rows="14" placeholder="Dear [Insert Host name]..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-import-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-import-confirm">Auto-Generate</button>
+    </div>
+  </div>
+</div>
+
+<div id="warning-modal" class="modal-overlay">
+  <div class="modal-content" style="width:400px;">
+    <div class="modal-header" style="color: #f87171;">⚠️ Missing Information</div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;">You have empty fields in your report. Placeholders like <strong>[bracketed text]</strong> will be copied to your clipboard.</p>
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;margin-top:10px;">Are you sure you want to copy anyway?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-warn-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-warn-confirm" style="background:#f87171;border-color:#f87171;color:#111;">Copy anyway</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+const h = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── Utility stubs (full implementations in templates.js) ──────
+const labelToId = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'field';
+function insertAtCursor(ta,text){
+  const s=ta.selectionStart,e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
+  ta.selectionStart=ta.selectionEnd=s+text.length;
+  ta.focus(); ta.dispatchEvent(new Event('input'));
 }
-function sanitizeDomain(raw) {
-  if (!raw) return raw;
-  return raw.replace(/^https?:\/\//i, '').replace(/\./g, '[.]');
-}
-function sanitizeEmail(raw) {
-  if (!raw) return raw;
-  return raw.replace(/@/g, '[@]').replace(/\./g, '[.]');
-}
-function hesc(s) {
-  return String(s||'')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-// Always wraps — shows placeholder span if value is empty
-function fs(id, value, placeholder) {
-  const display = value || placeholder || '';
-  if (!display) return '';
-  return `<span class="out-field" data-field="${id}">${hesc(display)}</span>`;
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
 }
 
-const ABUSE_MAP = {
-  'Phishing':            'phishing',
-  'Malware Distribution':'malware distribution',
-  'Spam':                'spam',
-  'Brand Impersonation': 'brand impersonation',
-  'Scam':                'scams',
-  'Other':               'malicious activities',
+// ═══════════════════════════════════════════════
+// PROFILE
+// ═══════════════════════════════════════════════
+const getProfile=()=>{try{return JSON.parse(localStorage.getItem('to_profile')||'{}');}catch{return{};}};
+const saveProfileData=p=>localStorage.setItem('to_profile',JSON.stringify(p));
+function loadProfileUI(){
+  const p=getProfile();
+  document.getElementById('pf-company').value=p.company||'';
+  document.getElementById('pf-name').value=p.name||'';
+  document.getElementById('pf-email').value=p.email||'';
+  document.getElementById('pf-role').value=p.role||'';
+  document.getElementById('pf-dept').value=p.dept||'';
+}
+document.getElementById('btn-save-profile').addEventListener('click',()=>{
+  saveProfileData({
+    company:document.getElementById('pf-company').value.trim(),
+    name:document.getElementById('pf-name').value.trim(),
+    email:document.getElementById('pf-email').value.trim(),
+    role:document.getElementById('pf-role').value.trim(),
+    dept:document.getElementById('pf-dept').value.trim(),
+  });
+  showToast('Profile saved.');
+});
+
+// ═══════════════════════════════════════════════
+// SAVED LISTS
+// ═══════════════════════════════════════════════
+const LIST_KEYS={registrars:'to_list_v2_registrars',hosts:'to_list_v2_hosts',clients:'to_list_v2_clients'};
+const getList=k=>{try{return JSON.parse(localStorage.getItem(LIST_KEYS[k])||'[]');}catch{return[];}};
+const saveList=(k,a)=>localStorage.setItem(LIST_KEYS[k],JSON.stringify(a));
+function addEntry(k,v){
+  const val=v.trim(); if(!val) return false;
+  const list=getList(k);
+  if(list.map(e=>e.toLowerCase()).includes(val.toLowerCase())) return false;
+  list.push(val); saveList(k,list); return true;
+}
+const removeEntry=(k,v)=>saveList(k,getList(k).filter(e=>e!==v));
+
+// ═══════════════════════════════════════════════
+// USER TEMPLATES + FOLDERS
+// ═══════════════════════════════════════════════
+const getUserTemplates=()=>{try{return JSON.parse(localStorage.getItem('to_user_templates')||'[]');}catch{return[];}};
+const saveUserTemplates=a=>localStorage.setItem('to_user_templates',JSON.stringify(a));
+const getUserFolders=()=>{try{return JSON.parse(localStorage.getItem('to_user_folders')||'[]');}catch{return[];}};
+const saveUserFolders=a=>localStorage.setItem('to_user_folders',JSON.stringify(a));
+
+// ═══════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const data={version:4,exported:new Date().toISOString(),
+    profile:getProfile(),
+    lists:{registrars:getList('registrars'),hosts:getList('hosts'),clients:getList('clients')},
+    userTemplates:getUserTemplates(),userFolders:getUserFolders(),
+    drafts:getDrafts()};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a'); a.href=url; a.download='template-organizer-save.json'; a.click();
+  URL.revokeObjectURL(url); showToast('Save file exported.');
+});
+document.getElementById('import-file').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.version||!d.lists) throw new Error('invalid');
+      if(d.lists.registrars) saveList('registrars',d.lists.registrars);
+      if(d.lists.hosts) saveList('hosts',d.lists.hosts);
+      if(d.lists.clients) saveList('clients',d.lists.clients);
+      if(d.userTemplates) saveUserTemplates(d.userTemplates);
+      if(d.userFolders) saveUserFolders(d.userFolders);
+      if(d.drafts) saveDrafts(d.drafts);
+      if(d.profile){saveProfileData(d.profile);loadProfileUI();}
+      renderAllListEntries(); renderDrafts(); renderTree();
+      showToast('Save file imported.');
+    }catch{showToast('Error: could not read save file.');}
+    e.target.value='';
+  };
+  r.readAsText(file);
+});
+
+
+// ═══════════════════════════════════════════════
+// PANEL SYSTEM
+// ═══════════════════════════════════════════════
+let activePanel=null;
+const PANEL_ELS={
+  profile:{el:document.getElementById('profile-panel'),btn:document.getElementById('btn-profile')},
+  lists:{el:document.getElementById('lists-panel'),btn:document.getElementById('btn-lists')},
+  builder:{el:document.getElementById('builder-panel'),btn:null},
 };
 
-const DEFAULT_HOSTS = [
-  'Amazon Web Services (AWS)','Cloudflare','Google Cloud','Microsoft Azure',
-  'DigitalOcean','Linode / Akamai','Vultr','Hetzner','OVHcloud','Fastly',
-  'Leaseweb','Cogent Communications','Lumen / CenturyLink','Rackspace',
-  'GoDaddy Hosting','Bluehost','HostGator','DreamHost','SiteGround',
-  'Namecheap Hosting','Ionos / 1&1','Hostinger','A2 Hosting','InMotion Hosting',
-  'WP Engine','Kinsta','Liquid Web','Nexcess','Contabo','BuyVM',
-  'Frantech Solutions','Sharktech','Psychz Networks','QuadraNet','Zare',
-  'M247','Serverius','Datacamp Limited','Combahton','Blazingfast',
-];
+function openPanel(name,skipToggle=false){
+  if(!skipToggle&&activePanel===name){closePanel();return;}
+  // close current
+  if(activePanel&&PANEL_ELS[activePanel]){
+    PANEL_ELS[activePanel].el.classList.remove('open');
+    if(PANEL_ELS[activePanel].btn) PANEL_ELS[activePanel].btn.classList.remove('btn-active');
+  }
+  activePanel=name;
+  if(PANEL_ELS[name]){
+    PANEL_ELS[name].el.classList.add('open');
+    if(PANEL_ELS[name].btn) PANEL_ELS[name].btn.classList.add('btn-active');
+  }
+  if(name==='lists') renderAllListEntries();
+  if(name==='profile') loadProfileUI();
+}
+function closePanel(){
+  if(activePanel&&PANEL_ELS[activePanel]){
+    PANEL_ELS[activePanel].el.classList.remove('open');
+    if(PANEL_ELS[activePanel].btn) PANEL_ELS[activePanel].btn.classList.remove('btn-active');
+  }
+  activePanel=null;
+}
 
-const TEMPLATES = [
+document.getElementById('btn-profile').addEventListener('click',()=>openPanel('profile'));
+document.getElementById('btn-lists').addEventListener('click',()=>openPanel('lists'));
 
-  // ── Registrar Abuse Report ──────────────────────────────────
-  {
-    id: 'abuse_registrar',
-    name: 'Registrar Abuse Report',
-    folder: 'Abuse Reports',
+// ═══════════════════════════════════════════════
+// LISTS PANEL
+// ═══════════════════════════════════════════════
+document.querySelectorAll('.ltab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.ltab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab.dataset.tab));
+    document.querySelectorAll('.lpane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+tab.dataset.tab));
+  });
+});
+function renderListEntries(key){
+  const c=document.getElementById('entries-'+key); c.innerHTML='';
+  const entries=getList(key);
+  if(!entries.length){c.innerHTML=`<div class="l-empty">No entries yet.</div>`;return;}
+  entries.forEach(entry=>{
+    const row=document.createElement('div'); row.className='l-row';
+    const inp=document.createElement('input'); inp.type='text'; inp.value=entry;
+    inp.addEventListener('change',()=>{const l=getList(key),i=l.indexOf(entry);if(i!==-1&&inp.value.trim()){l[i]=inp.value.trim();saveList(key,l);}else renderListEntries(key);});
+    const btn=document.createElement('button'); btn.className='l-rem'; btn.innerHTML='×';
+    btn.addEventListener('click',()=>{removeEntry(key,entry);renderListEntries(key);});
+    row.appendChild(inp);row.appendChild(btn);c.appendChild(row);
+  });
+}
+const renderAllListEntries=()=>['registrars','hosts','clients'].forEach(k=>renderListEntries(k));
 
-    onLoad(fv) {
-      if (!fv.date_observed) fv.date_observed = today();
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
+['registrars','hosts','clients'].forEach(key=>{
+  const addBtn=document.getElementById('addbtn-'+key),addInp=document.getElementById('add-'+key);
+  const doAdd=()=>{if(addEntry(key,addInp.value)){addInp.value='';renderListEntries(key);}};
+  addBtn.addEventListener('click',doAdd);
+  addInp.addEventListener('keydown',e=>{if(e.key==='Enter')doAdd();});
+});
+
+document.getElementById('load-default-hosts').addEventListener('click',()=>{
+  let n=0; DEFAULT_HOSTS.forEach(h2=>{if(addEntry('hosts',h2))n++;}); renderListEntries('hosts');
+  showToast(`Added ${n} hosting provider${n!==1?'s':''}.`);
+});
+document.getElementById('csv-registrars').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader(); r.onload=ev=>{
+    let n=0;
+    ev.target.result.split(/\r?\n/).forEach(line=>{
+      const name=line.split('","')[0].replace(/^"?\uFEFF?/,'').replace(/"$/,'').trim();
+      if(name&&name!=='Registrar Name') if(addEntry('registrars',name)) n++;
+    });
+    renderListEntries('registrars'); e.target.value=''; showToast(`Imported ${n} registrar${n!==1?'s':''}.`);
+  }; r.readAsText(file);
+});
+document.getElementById('txt-clients').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader(); r.onload=ev=>{
+    let n=0;
+    ev.target.result.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{if(addEntry('clients',l))n++;});
+    renderListEntries('clients'); e.target.value=''; showToast(`Imported ${n} client${n!==1?'s':''}.`);
+  }; r.readAsText(file);
+});
+
+// ═══════════════════════════════════════════════
+// TEMPLATE BUILDER
+// ═══════════════════════════════════════════════
+let bld={editingId:null,name:'',folder:'',fields:[],outputTemplate:''};
+
+function openBuilder(templateRef=null){
+  if(templateRef&&templateRef.isUserTemplate){
+    bld={editingId:templateRef.id,name:templateRef.name,folder:templateRef.folder,
+      fields:JSON.parse(JSON.stringify(templateRef.fields)),outputTemplate:templateRef.outputTemplate||''};
+    document.getElementById('bld-title').textContent='Edit Template';
+  } else if(templateRef&&!templateRef.isUserTemplate){
+    bld={editingId:null,name:templateRef.name+' (copy)',folder:templateRef.folder,
+      fields:JSON.parse(JSON.stringify(templateRef.fields)),outputTemplate:generateDefaultOutput(templateRef.fields)};
+    document.getElementById('bld-title').textContent='Duplicate Template';
+  } else {
+    bld={editingId:null,name:'',folder:getAllFolders()[0]||'General',fields:[],outputTemplate:''};
+    document.getElementById('bld-title').textContent='New Template';
+  }
+  document.getElementById('bld-name').value=bld.name;
+  refreshBldFolderDrop();
+  renderBldFields();
+  document.getElementById('bld-output').value=bld.outputTemplate;
+  openPanel('builder',true);
+}
+
+document.getElementById('btn-bld-cancel').addEventListener('click',closePanel);
+document.getElementById('btn-new-tmpl').addEventListener('click',()=>openBuilder());
+document.getElementById('btn-edit-tmpl').addEventListener('click',()=>{if(curTmpl?.isUserTemplate)openBuilder(curTmpl);});
+document.getElementById('btn-dupe-tmpl').addEventListener('click',()=>{if(curTmpl)openBuilder(curTmpl);});
+
+document.getElementById('bld-name').addEventListener('input',e=>{bld.name=e.target.value;});
+document.getElementById('bld-folder').addEventListener('change',e=>{bld.folder=e.target.value;});
+document.getElementById('bld-output').addEventListener('input',e=>{bld.outputTemplate=e.target.value;});
+
+const importModal = document.getElementById('import-modal');
+const importTa = document.getElementById('import-textarea');
+
+document.getElementById('btn-bld-import').addEventListener('click', () => {
+  importTa.value = ''; // clear previous input
+  importModal.classList.add('show');
+  setTimeout(() => importTa.focus(), 100);
+});
+
+document.getElementById('btn-import-cancel').addEventListener('click', () => {
+  importModal.classList.remove('show');
+});
+
+document.getElementById('btn-import-confirm').addEventListener('click', () => {
+  const rawText = importTa.value;
+  if (!rawText || !rawText.trim()) {
+    importModal.classList.remove('show');
+    return;
+  }
+
+  // Enhanced Regex to catch: {{...}}, [[...]], [...], <...>, and {...}
+  const regex = /\{\{(.*?)\}\}|\[\[(.*?)\]\]|\[(.*?)\]|\<(.*?)\>|\{(.*?)\}/g;
+  let parsedOutput = rawText;
+  let match;
+  
+  // Keep track of IDs to avoid making duplicate fields
+  const existingIds = new Set(bld.fields.map(f => f.id));
+
+  while ((match = regex.exec(rawText)) !== null) {
+    // Find which bracket type matched
+    const rawLabel = match[1] || match[2] || match[3] || match[4] || match[5]; 
+    if (!rawLabel || !rawLabel.trim()) continue;
+
+    const cleanLabel = rawLabel.replace(/^insert /i, '').trim();
+    const id = labelToId(cleanLabel);
+
+    // Replace all occurrences of this exact placeholder with the {{token}}
+    parsedOutput = parsedOutput.split(match[0]).join(`{{${id}}}`);
+
+    // Create the field if it doesn't exist yet
+    if (!existingIds.has(id)) {
+      bld.fields.push({
+        id: id,
+        label: cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1),
+        type: 'text',
+        placeholder: `e.g. ${cleanLabel}…`,
+        _manualId: true
+      });
+      existingIds.add(id);
+    }
+  }
+
+  bld.outputTemplate = parsedOutput;
+  document.getElementById('bld-output').value = parsedOutput;
+  renderBldFields();
+  
+  importModal.classList.remove('show');
+  showToast('Template auto-generated from text!');
+});
+
+document.getElementById('btn-bld-new-folder').addEventListener('click',()=>{
+  const name=prompt('New folder name:'); if(!name?.trim()) return;
+  const n=name.trim(); const folders=getUserFolders();
+  if(!folders.includes(n)){folders.push(n);saveUserFolders(folders);}
+  bld.folder=n; refreshBldFolderDrop(); renderTree();
+});
+
+document.getElementById('btn-bld-add-field').addEventListener('click',()=>{
+  bld.fields.push({id:'',label:'',type:'text',placeholder:'',hint:'',options:[],listKey:'registrars',sanitize:'',profileKey:'',_manualId:false});
+  renderBldFields();
+});
+document.getElementById('btn-bld-add-divider').addEventListener('click',()=>{
+  bld.fields.push({_divider:true}); renderBldFields();
+});
+
+document.getElementById('btn-bld-save').addEventListener('click',()=>{
+  const name=document.getElementById('bld-name').value.trim();
+  if(!name){showToast('Please enter a template name.');return;}
+  const folder=document.getElementById('bld-folder').value;
+  if(!folder){showToast('Please select a folder.');return;}
+  const outputTemplate=document.getElementById('bld-output').value;
+  const fields=bld.fields.map(f=>{
+    if(f._divider) return{_divider:true};
+    return{id:f.id||labelToId(f.label||'field'),label:f.label||'Field',type:f.type||'text',
+      placeholder:f.placeholder||'',hint:f.hint||'',
+      options:Array.isArray(f.options)?f.options:[],
+      listKey:f.listKey||'registrars',sanitize:f.sanitize||'',profileKey:f.profileKey||''};
+  });
+  const templates=getUserTemplates();
+  if(bld.editingId){
+    const i=templates.findIndex(t=>t.id===bld.editingId);
+    if(i!==-1) templates[i]={...templates[i],name,folder,fields,outputTemplate};
+  } else {
+    templates.push({id:'user_'+Date.now(),isUserTemplate:true,name,folder,fields,outputTemplate});
+  }
+  saveUserTemplates(templates);
+  closePanel(); renderTree();
+  if(bld.editingId&&curTmpl?.id===bld.editingId){
+    const upd=getAllTemplates().find(t=>t.id===bld.editingId);
+    if(upd) loadTemplate(upd,fieldValues);
+  }
+  showToast(bld.editingId?'Template updated.':'Template created.');
+});
+
+function refreshBldFolderDrop(){
+  const sel=document.getElementById('bld-folder');
+  const folders=getAllFolders();
+  sel.innerHTML=folders.map(f=>`<option value="${h(f)}" ${bld.folder===f?'selected':''}>${h(f)}</option>`).join('');
+}
+
+function refreshBldTokens(){
+  const c=document.getElementById('bld-tokens'); c.innerHTML='';
+  const out=document.getElementById('bld-output');
+  bld.fields.forEach(f=>{
+    if(f._divider||!f.id) return;
+    const btn=document.createElement('button'); btn.className='bld-token'; btn.textContent=`{{${f.id}}}`;
+    btn.addEventListener('click',()=>insertAtCursor(out,`{{${f.id}}}`));
+    c.appendChild(btn);
+  });
+  ['{{today}}','{{timestamp}}'].forEach(tok=>{
+    const btn=document.createElement('button'); btn.className='bld-token'; btn.textContent=tok;
+    btn.addEventListener('click',()=>insertAtCursor(out,tok));
+    c.appendChild(btn);
+  });
+}
+
+function renderBldFields(){
+  const c=document.getElementById('bld-fields-list'); c.innerHTML='';
+  bld.fields.forEach((f,idx)=>c.appendChild(makeBldFieldCard(f,idx)));
+  refreshBldTokens();
+}
+
+function makeBldFieldCard(f,idx){
+  const card=document.createElement('div');
+  if(f._divider){
+    card.className='bfc bfc-divider';
+    card.innerHTML=`<div class="bfc-main"><div class="bfc-mv"><button class="bfc-up">↑</button><button class="bfc-down">↓</button></div><span class="bfc-divlbl">── divider ──────────────────────────</span><button class="bfc-remove">×</button></div>`;
+  } else {
+    card.className='bfc';
+    const typeOpts=['text','email','date','textarea','list','select','listpicker'].map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`).join('');
+    card.innerHTML=`<div class="bfc-main">
+      <div class="bfc-mv"><button class="bfc-up">↑</button><button class="bfc-down">↓</button></div>
+      <input class="bfc-label-inp" type="text" placeholder="Field label" value="${h(f.label||'')}">
+      <select class="bfc-type-sel">${typeOpts}</select>
+      <button class="bfc-toggle">⚙</button>
+      <button class="bfc-remove">×</button>
+    </div>
+    <div class="bfc-extra${f._extraOpen?' open':''}">
+      <div class="bfc-eg-grid">
+        <div class="bfc-eg"><label>Field ID (used in {{tokens}})</label><input class="bfc-id" value="${h(f.id||'')}" placeholder="auto-generated"></div>
+        <div class="bfc-eg"><label>Placeholder text</label><input class="bfc-ph" value="${h(f.placeholder||'')}" placeholder="Optional…"></div>
+        <div class="bfc-eg full"><label>Help text (shown below field)</label><input class="bfc-hint" value="${h(f.hint||'')}" placeholder="Optional hint…"></div>
+        <div class="bfc-eg bfc-opts-row${f.type==='select'?'':' bfc-hidden'}"><label>Options <small>(comma-separated)</small></label><input class="bfc-opts" value="${h((f.options||[]).join(', '))}" placeholder="Option 1, Option 2"></div>
+        <div class="bfc-eg bfc-lk-row${f.type==='listpicker'?'':' bfc-hidden'}"><label>List source</label><select class="bfc-lk"><option value="registrars" ${f.listKey==='registrars'?'selected':''}>Registrars</option><option value="hosts" ${f.listKey==='hosts'?'selected':''}>Hosting Providers</option><option value="clients" ${f.listKey==='clients'?'selected':''}>Clients</option></select></div>
+        <div class="bfc-eg bfc-san-row${(f.type==='text'||f.type==='email')?'':' bfc-hidden'}"><label>Sanitize output</label><select class="bfc-san"><option value="" ${!f.sanitize?'selected':''}>None</option><option value="url" ${f.sanitize==='url'?'selected':''}>URL (hxxps[:]// + [.])</option><option value="domain" ${f.sanitize==='domain'?'selected':''}>Domain ([.])</option><option value="email" ${f.sanitize==='email'?'selected':''}>Email ([@] and [.])</option></select></div>
+        <div class="bfc-eg"><label>Pre-fill from profile</label><select class="bfc-pkey"><option value="">None</option><option value="company" ${f.profileKey==='company'?'selected':''}>Company name</option><option value="name" ${f.profileKey==='name'?'selected':''}>Your name</option><option value="email" ${f.profileKey==='email'?'selected':''}>Email</option><option value="role" ${f.profileKey==='role'?'selected':''}>Role</option><option value="dept" ${f.profileKey==='dept'?'selected':''}>Department</option></select></div>
+      </div>
+    </div>`;
+    const labelInp=card.querySelector('.bfc-label-inp'),idInp=card.querySelector('.bfc-id');
+    labelInp.addEventListener('input',e=>{
+      bld.fields[idx].label=e.target.value;
+      if(!bld.fields[idx]._manualId){const auto=labelToId(e.target.value);bld.fields[idx].id=auto;idInp.value=auto;refreshBldTokens();}
+    });
+    idInp.addEventListener('input',e=>{bld.fields[idx].id=e.target.value;bld.fields[idx]._manualId=true;refreshBldTokens();});
+    card.querySelector('.bfc-type-sel').addEventListener('change',e=>{
+      bld.fields[idx].type=e.target.value;
+      card.querySelector('.bfc-opts-row').classList.toggle('bfc-hidden',e.target.value!=='select');
+      card.querySelector('.bfc-lk-row').classList.toggle('bfc-hidden',e.target.value!=='listpicker');
+      card.querySelector('.bfc-san-row').classList.toggle('bfc-hidden',e.target.value!=='text');
+    });
+    card.querySelector('.bfc-toggle').addEventListener('click',()=>{
+      const ex=card.querySelector('.bfc-extra');ex.classList.toggle('open');bld.fields[idx]._extraOpen=ex.classList.contains('open');
+    });
+    card.querySelector('.bfc-ph').addEventListener('input',e=>{bld.fields[idx].placeholder=e.target.value;});
+    card.querySelector('.bfc-hint').addEventListener('input',e=>{bld.fields[idx].hint=e.target.value;});
+    card.querySelector('.bfc-opts').addEventListener('input',e=>{bld.fields[idx].options=e.target.value.split(',').map(s=>s.trim()).filter(Boolean);});
+    card.querySelector('.bfc-lk').addEventListener('change',e=>{bld.fields[idx].listKey=e.target.value;});
+    card.querySelector('.bfc-san').addEventListener('change',e=>{bld.fields[idx].sanitize=e.target.value;});
+    card.querySelector('.bfc-pkey').addEventListener('change',e=>{bld.fields[idx].profileKey=e.target.value;});
+  }
+  card.querySelector('.bfc-up').addEventListener('click',()=>{if(idx>0){[bld.fields[idx-1],bld.fields[idx]]=[bld.fields[idx],bld.fields[idx-1]];renderBldFields();}});
+  card.querySelector('.bfc-down').addEventListener('click',()=>{if(idx<bld.fields.length-1){[bld.fields[idx+1],bld.fields[idx]]=[bld.fields[idx],bld.fields[idx+1]];renderBldFields();}});
+  card.querySelector('.bfc-remove').addEventListener('click',()=>{bld.fields.splice(idx,1);renderBldFields();});
+  return card;
+}
+
+// ═══════════════════════════════════════════════
+// TEMPLATE HELPERS (built-ins come from templates.js)
+// ═══════════════════════════════════════════════
+
+function getAllTemplates(){
+  return[...TEMPLATES,...getUserTemplates().map(ut=>({
+    ...ut,
+    isUserTemplate:true,
+    _ut:ut,
+    onLoad(fv){
+      const p=getProfile();
+      (ut.fields||[]).forEach(f=>{
+        if(f._divider) return;
+        if(f.type==='date'&&!fv[f.id]) fv[f.id]=today();
+        if(f.profileKey&&!fv[f.id]&&p[f.profileKey]) fv[f.id]=p[f.profileKey];
+      });
     },
+    render(v){ return renderUserTemplate(ut.outputTemplate,ut.fields,v); },
+    renderHtml(v){ return renderUserTemplateHtml(ut,v); },
+  }))];
+}
 
-    fields: [
-      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name\u2026' },
-      { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
-      { _divider: true },
-      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',           sanitize:'domain' },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
-      { id:'date_observed',    label:'Date observed',              type:'date' },
-      { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026', hint:'Describe how to access the malicious page.' },
-      { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics\u2026' },
-      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link\u2026' },
-      { _divider: true },
-      { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
-      { id:'our_case_id',  label:'Case ID',           type:'text', placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',    label:'System timestamp',  type:'text', placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
+function getAllFolders(){
+  return[...new Set([...BUILTIN_FOLDERS,...getUserFolders()])];
+}
 
-    render(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const ds    = sanitizeDomain(v.offending_domain) || '[offending domain]';
-      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
-      const lines = [];
-      lines.push(`Dear ${v.registrar ? v.registrar + ' Abuse Team' : '[Registrar] Abuse Team'},`);
-      lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
-      lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
-      lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
-      lines.push(`Offending domain:  ${ds}`);
-      lines.push(`Offending URL:     ${us}`);
-      lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
-      lines.push(`Abuse type:        ${abuse}`);
-      lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
-      lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
-      lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
-      if (v.evidence_data) lines.push(`\nEvidence details:\n${v.evidence_data}`);
-      if (v.blocklists?.length) { lines.push(`\nFlagged by the following blocklists:`); v.blocklists.forEach(b => lines.push(`  \u2022 ${b}`)); }
-      lines.push(`\n${'─'.repeat(55)}`);
-      lines.push(`Please confirm receipt of this report and inform us of the outcome of your investigation.\n`);
-      lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
+function renderUserTemplate(tpl,fields,values){
+  let r=tpl||'';
+  (fields||[]).forEach(f=>{
+    if(f._divider||!f.id) return;
+    let v=values[f.id]||'';
+    const placeholder = `[${f.label.toLowerCase()}]`; // Create a clean fallback text
+    if(Array.isArray(v)) v=v.filter(s=>s.trim()).map(s=>'  • '+s).join('\n');
+    else{
+      v=String(v);
+      if(f.sanitize==='url') v=sanitizeUrl(v)||v;
+      else if(f.sanitize==='domain') v=sanitizeDomain(v)||v;
+      else if(f.sanitize==='email') v=sanitizeEmail(v)||v; // <-- Add this line!
+    }
+    r=r.split('{{'+f.id+'}}').join(v || placeholder);
+  });
+  r=r.split('{{today}}').join(today()).split('{{timestamp}}').join(nowUtc());
+  return r;
+}
 
-    renderHtml(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
-      const ds    = sanitizeDomain(v.offending_domain);
-      const us    = sanitizeUrl(v.offending_url);
-      const lines = [];
-      lines.push(hesc('Dear ') + fs('registrar', v.registrar ? v.registrar + ' Abuse Team' : null, '[Registrar] Abuse Team') + hesc(','));
-      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
-      lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Offending domain:  ') + fs('offending_domain', ds, '[offending domain]'));
-      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
-      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
-      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
-      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
-      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
-      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
-      if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
-      if (v.blocklists?.length) { lines.push('\n' + hesc('Flagged by the following blocklists:')); v.blocklists.forEach(b => lines.push(hesc('  \u2022 ') + fs('blocklists', b))); }
-      lines.push('\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
-      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
+function renderUserTemplateHtml(ut,values){
+  const tpl=ut.outputTemplate||'';
+  const fields=ut.fields||[];
+  const vals={};
+  const fieldMap={}; // Store field references so we can grab their labels
+  fields.forEach(f=>{
+    if(f._divider||!f.id) return;
+    fieldMap[f.id]=f;
+    let v=values[f.id]||'';
+    if(Array.isArray(v)) vals[f.id]=v.filter(s=>s.trim());
+    else{
+      v=String(v);
+      if(f.sanitize==='url') v=sanitizeUrl(v)||v;
+      else if(f.sanitize==='domain') v=sanitizeDomain(v)||v;
+      vals[f.id]=v;
+    }
+  });
+  const parts=tpl.split(/(\{\{\w+\}\})/);
+  return parts.map(part=>{
+    const m=part.match(/^\{\{(\w+)\}\}$/);
+    if(!m) return hesc(part);
+    const id=m[1];
+    if(id==='today') return hesc(today());
+    if(id==='timestamp') return hesc(nowUtc());
+    const v=vals[id];
+    
+    // Auto-generate a placeholder like [original domain] using the field's label
+    const placeholder = fieldMap[id] ? `[${fieldMap[id].label.toLowerCase()}]` : `[${id}]`;
+    
+    if(Array.isArray(v)&&v.length) return v.map(item=>`<span class="out-field" data-field="${id}">${hesc('  • '+item)}</span>`).join('\n');
+    
+    // Always wrap the output in the span so it highlights, whether filled or empty!
+    return `<span class="out-field" data-field="${id}">${hesc(v || placeholder)}</span>`;
+  }).join('');
+}
 
-  // ── Follow-Up Abuse Report ──────────────────────────────────
-  {
-    id: 'abuse_followup',
-    name: 'Follow-Up Abuse Report',
-    folder: 'Abuse Reports',
+function generateDefaultOutput(fields){
+  return(fields||[]).map(f=>f._divider?'':f.label+': {{'+f.id+'}}').filter(Boolean).join('\n');
+}
 
-    onLoad(fv) {
-      if (!fv.date_observed) fv.date_observed = today();
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
+// ═══════════════════════════════════════════════
+// SIDEBAR TREE
+// ═══════════════════════════════════════════════
+let searchQuery='';
+const folderState={};
 
-    fields: [
-      { id:'registrar',    label:'Registrar',                      type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',    placeholder:'Client name\u2026' },
-      { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
-      { id:'their_case_id',label:'Their ticket / case ID',         type:'text',       placeholder:"Ref from the registrar's reply" },
-      { _divider: true },
-      { id:'offending_domain', label:'Offending domain',           type:'text',       placeholder:'malicious-domain.com',           sanitize:'domain' },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
-      { id:'date_observed',    label:'Date observed',              type:'date' },
-      { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026' },
-      { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Updated evidence or notes\u2026' },
-      { _divider: true },
-      { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
-      { id:'our_case_id',  label:'Our case ID',       type:'text', placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',    label:'System timestamp',  type:'text', placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
+document.getElementById('btn-new-folder').addEventListener('click',()=>{
+  const name=prompt('New folder name:'); if(!name?.trim()) return;
+  const n=name.trim();
+  if(BUILTIN_FOLDERS.has(n)){showToast('That name is reserved. Choose another.');return;}
+  const folders=getUserFolders();
+  if(!folders.includes(n)){folders.push(n);saveUserFolders(folders);renderTree();}
+});
 
-    render(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const ds    = sanitizeDomain(v.offending_domain) || '[offending domain]';
-      const us    = sanitizeUrl(v.offending_url) || '[offending URL]';
-      const lines = [];
-      lines.push(`Subject: [FOLLOW UP] ${abuse} - ${ds} - Ref: ${v.their_case_id || '[their case ID]'}`);
-      lines.push(`\nTo the Abuse Department,`);
-      lines.push(`\nThis is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.`);
-      lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
-      lines.push(`Offending URL:     ${us}`);
-      lines.push(`Offending domain:  ${ds}`);
-      lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
-      lines.push(`Abuse type:        ${abuse}`);
-      lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
-      lines.push(`Assigned ticket:   ${v.their_case_id || '[ticket ID]'}`);
-      lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
-      lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
-      if (v.evidence_data) lines.push(`\nEvidence details:\n${v.evidence_data}`);
-      lines.push(`\n${'─'.repeat(55)}`);
-      lines.push(`If you require additional evidence to proceed with mitigation, please let us know.\n`);
-      lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
+function getFiltered(){
+  const all=getAllTemplates();
+  if(!searchQuery) return all;
+  const q=searchQuery.toLowerCase();
+  return all.filter(t=>t.name.toLowerCase().includes(q)||t.folder.toLowerCase().includes(q));
+}
 
-    renderHtml(v) {
-      const ts    = v.timestamp || nowUtc();
-      const abuse = ABUSE_MAP[v.abuse_type] || v.abuse_type;
-      const ds    = sanitizeDomain(v.offending_domain);
-      const us    = sanitizeUrl(v.offending_url);
-      const lines = [];
-      lines.push(hesc('Subject: [FOLLOW UP] ') + fs('abuse_type', abuse, '[abuse type]') + hesc(' - ') + fs('offending_domain', ds, '[domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
-      lines.push('\n' + hesc('To the Abuse Department,'));
-      lines.push('\n' + hesc('This is a follow-up regarding the abuse report referenced below.\nOur monitoring systems indicate that the abusive content or domain is still active and accessible. Please provide a status update regarding your investigation.'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
-      lines.push(hesc('Offending domain:  ') + fs('offending_domain', ds, '[offending domain]'));
-      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
-      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
-      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
-      lines.push(hesc('Assigned ticket:   ') + fs('their_case_id', v.their_case_id, '[ticket ID]'));
-      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
-      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
-      if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
-      lines.push('\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('If you require additional evidence to proceed with mitigation, please let us know.\n'));
-      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
+function renderTree(){
+  const treeEl=document.getElementById('tree'); treeEl.innerHTML='';
+  const filtered=getFiltered();
+  if(!filtered.length){treeEl.innerHTML=`<div class="no-results">No templates found.</div>`;return;}
 
-  // ── Hosting Provider Abuse Report ──────────────────────────
-  {
-    id: 'abuse_host',
-    name: 'Hosting Provider Abuse Report',
-    folder: 'Abuse Reports',
+  // Group by folder, preserving order: built-in folders first, then user folders
+  const folderOrder=[...BUILTIN_FOLDERS,...getUserFolders().filter(f=>!BUILTIN_FOLDERS.has(f))];
+  const groups={};
+  filtered.forEach(t=>{if(!groups[t.folder])groups[t.folder]=[];groups[t.folder].push(t);});
+  // Also show empty user folders
+  getUserFolders().forEach(f=>{if(!groups[f])groups[f]=[];});
 
-    onLoad(fv) {
-      if (!fv.date_observed) fv.date_observed = today();
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
+  const orderedFolders=[...folderOrder,...Object.keys(groups).filter(f=>!folderOrder.includes(f))];
 
-    fields: [
-      { id:'host',         label:'Hosting provider',               type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare\u2026' },
-      { id:'client',       label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name\u2026' },
-      { id:'abuse_type',   label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
-      { _divider: true },
-      { id:'offending_url',    label:'Offending URL',              type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
-      { id:'original_domain',  label:"Original domain (client's)", type:'text',      placeholder:'legitimate-brand.com' },
-      { id:'date_observed',    label:'Date observed',              type:'date' },
-      { _divider: true },
-      { id:'access_instructions', label:'Access instructions',     type:'textarea',   placeholder:'How to reach/reproduce the abuse\u2026', hint:'Describe how to access the malicious page.' },
-      { id:'evidence_format',     label:'Evidence format',         type:'select',     options:['Screenshot + URL','HAR file','Email headers','Screenshot only','URL only'] },
-      { id:'evidence_data',       label:'Evidence details',        type:'textarea',   placeholder:'Describe what the phishing site does, what it mimics\u2026' },
-      { id:'blocklists',          label:'Blocklist references',    type:'list',       placeholder:'e.g. VirusTotal link, URLScan link\u2026' },
-      { _divider: true },
-      { id:'company_name', label:'Your company name', type:'text', placeholder:'Acme Security Inc.', profileKey:'company' },
-      { id:'our_case_id',  label:'Case ID',           type:'text', placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',    label:'System timestamp',  type:'text', placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
+  orderedFolders.forEach(folder=>{
+    const templates=groups[folder]; if(templates===undefined) return;
+    const isUserFolder=!BUILTIN_FOLDERS.has(folder);
+    const isCollapsed=folderState[folder]&&!searchQuery;
+    const block=document.createElement('div'); block.className='folder-block'+(isCollapsed?' collapsed':'');
 
-    render(v) {
-      const ts         = v.timestamp || nowUtc();
-      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const us         = sanitizeUrl(v.offending_url) || '[offending URL]';
-      const phishRaw   = v.offending_url ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0] : '[phishing website]';
-      const phishSan   = sanitizeDomain(phishRaw) || phishRaw;
-      const lines = [];
-      lines.push(`Subject: [URGENT] Phishing website Takedown Request for ${phishSan}`);
-      lines.push(`\nDear ${v.host ? v.host + ' Abuse Team' : '[Host Provider] Abuse Team'},`);
-      lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
-      lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
-      lines.push(`\n${'─'.repeat(55)}\nABUSE REPORT & EVIDENCE\n${'─'.repeat(55)}`);
-      lines.push(`Offending URL:     ${us}`);
-      lines.push(`Original domain:   ${v.original_domain || '[original domain]'}`);
-      lines.push(`Abuse type:        ${abuse}`);
-      lines.push(`Date observed:     ${v.date_observed || '[date]'}`);
-      lines.push(`Access:            ${v.access_instructions || '[access instructions]'}`);
-      lines.push(`Evidence format:   ${v.evidence_format || '[evidence format]'}`);
-      if (v.evidence_data) lines.push(`\nEvidence details:\n${v.evidence_data}`);
-      if (v.blocklists?.length) {
-        lines.push(`\nPlease note that the phishing URL is already flagged as malicious by the following reputed blocklists:`);
-        v.blocklists.forEach(b => lines.push(`  \u2022 ${b}`));
+    const hdr=document.createElement('div'); hdr.className='folder-hdr';
+    const arrow=document.createElement('span'); arrow.className='folder-arrow'; arrow.textContent='▼';
+    const lbl=document.createElement('span'); lbl.textContent=folder; lbl.style.flex='1';
+    hdr.appendChild(arrow); hdr.appendChild(lbl);
+
+    if(isUserFolder){
+      const ctrl=document.createElement('div'); ctrl.className='fh-ctrl';
+      const ren=document.createElement('button'); ren.className='fh-btn'; ren.title='Rename folder'; ren.textContent='✏';
+      ren.addEventListener('click',e=>{
+        e.stopPropagation();
+        const newName=prompt('Rename folder:',folder); if(!newName?.trim()||newName.trim()===folder) return;
+        const n=newName.trim();
+        if(BUILTIN_FOLDERS.has(n)){showToast('That name is reserved.');return;}
+        const templates2=getUserTemplates().map(t=>t.folder===folder?{...t,folder:n}:t); saveUserTemplates(templates2);
+        const folders=getUserFolders().map(f2=>f2===folder?n:f2); saveUserFolders(folders);
+        renderTree();
+      });
+      const del=document.createElement('button'); del.className='fh-btn del'; del.title='Delete folder'; del.textContent='×';
+      del.addEventListener('click',e=>{
+        e.stopPropagation();
+        const hasTemplates=getUserTemplates().some(t=>t.folder===folder);
+        if(hasTemplates){showToast('Move or delete all templates in this folder first.');return;}
+        if(!confirm(`Delete folder "${folder}"?`)) return;
+        saveUserFolders(getUserFolders().filter(f2=>f2!==folder)); renderTree();
+      });
+      ctrl.appendChild(ren); ctrl.appendChild(del); hdr.appendChild(ctrl);
+    }
+
+    hdr.addEventListener('click',()=>{folderState[folder]=!folderState[folder];renderTree();});
+
+    const kids=document.createElement('div'); kids.className='folder-kids';
+    templates.forEach(t=>{
+      const item=document.createElement('div');
+      item.className='ti'+(curTmpl?.id===t.id?' active':'');
+      const dot=document.createElement('span'); dot.className='dot';
+      const name=document.createElement('span'); name.className='ti-name'; name.textContent=t.name;
+      item.appendChild(dot); item.appendChild(name);
+
+      if(t.isUserTemplate){
+        const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
+        const editBtn=document.createElement('button'); editBtn.className='ti-btn'; editBtn.title='Edit'; editBtn.textContent='✏';
+        editBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
+        const delBtn=document.createElement('button'); delBtn.className='ti-btn del'; delBtn.title='Delete'; delBtn.textContent='×';
+        delBtn.addEventListener('click',e=>{
+          e.stopPropagation();
+          if(!confirm(`Delete "${t.name}"?`)) return;
+          saveUserTemplates(getUserTemplates().filter(u=>u.id!==t.id));
+          if(curTmpl?.id===t.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
+          renderTree();
+        });
+        ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
+      } else {
+        const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
+        const dupeBtn=document.createElement('button'); dupeBtn.className='ti-btn'; dupeBtn.title='Duplicate'; dupeBtn.textContent='⎘';
+        dupeBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
+        ctrl.appendChild(dupeBtn); item.appendChild(ctrl);
       }
-      lines.push(`\nPlease confirm receipt of this report and inform us of the outcome of your investigation.\n`);
-      lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
 
-    renderHtml(v) {
-      const ts         = v.timestamp || nowUtc();
-      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type;
-      const us         = sanitizeUrl(v.offending_url);
-      const phishRaw   = v.offending_url ? v.offending_url.replace(/^https?:\/\//i,'').split('/')[0] : null;
-      const phishSan   = phishRaw ? sanitizeDomain(phishRaw) : null;
-      const lines = [];
-      lines.push(hesc('Subject: [URGENT] Phishing website Takedown Request for ') + fs('offending_url', phishSan, '[phishing website]'));
-      lines.push('\n' + hesc('Dear ') + fs('host', v.host ? v.host + ' Abuse Team' : null, '[Host Provider] Abuse Team') + hesc(','));
-      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
-      lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('ABUSE REPORT & EVIDENCE') + '\n' + hesc('─'.repeat(55)));
-      lines.push(hesc('Offending URL:     ') + fs('offending_url', us, '[offending URL]'));
-      lines.push(hesc('Original domain:   ') + fs('original_domain', v.original_domain, '[original domain]'));
-      lines.push(hesc('Abuse type:        ') + fs('abuse_type', abuse, '[abuse type]'));
-      lines.push(hesc('Date observed:     ') + fs('date_observed', v.date_observed, '[date]'));
-      lines.push(hesc('Access:            ') + fs('access_instructions', v.access_instructions, '[access instructions]'));
-      lines.push(hesc('Evidence format:   ') + fs('evidence_format', v.evidence_format, '[evidence format]'));
-      if (v.evidence_data) lines.push('\n' + hesc('Evidence details:\n') + fs('evidence_data', v.evidence_data));
-      if (v.blocklists?.length) {
-        lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:'));
-        v.blocklists.forEach(b => lines.push(hesc('  \u2022 ') + fs('blocklists', b)));
+      // Pass the current fieldValues but wipe specific fields to prevent errors
+      item.addEventListener('click', () => {
+        closePanel();
+        const carryOverValues = { ...fieldValues };
+        delete carryOverValues['their_case_id']; // Prevent mixing up tickets
+        delete carryOverValues['timestamp'];     // Force a fresh timestamp
+        loadTemplate(t, carryOverValues);
+      });
+      kids.appendChild(item);
+    });
+
+    block.appendChild(hdr); block.appendChild(kids); treeEl.appendChild(block);
+  });
+}
+
+document.getElementById('search-box').addEventListener('input',e=>{searchQuery=e.target.value.trim();renderTree();});
+
+// ═══════════════════════════════════════════════
+// LOAD TEMPLATE
+// ═══════════════════════════════════════════════
+let curTmpl=null, fieldValues={};
+
+function loadTemplate(template,savedValues={}){
+  curTmpl=template; fieldValues={...savedValues};
+  if(template.onLoad) template.onLoad(fieldValues);
+  const p=getProfile();
+  (template.fields||[]).forEach(f=>{
+    if(f._divider) return;
+    if(f.profileKey&&!fieldValues[f.id]&&p[f.profileKey]) fieldValues[f.id]=p[f.profileKey];
+  });
+  document.getElementById('tmpl-title').textContent=template.name;
+  updateToolbarButtons();
+  renderFields(); renderTree(); updateOutput();
+}
+
+function updateToolbarButtons(){
+  const editBtn=document.getElementById('btn-edit-tmpl');
+  const dupeBtn=document.getElementById('btn-dupe-tmpl');
+  if(!curTmpl){editBtn.style.display='none';dupeBtn.style.display='none';return;}
+  editBtn.style.display=curTmpl.isUserTemplate?'':'none';
+  dupeBtn.style.display='';
+}
+
+// ═══════════════════════════════════════════════
+// FORM FIELDS
+// ═══════════════════════════════════════════════
+function renderFields(){
+  const emptyState=document.getElementById('empty-state'),fc=document.getElementById('fields-container'),ot=document.getElementById('out-text');
+  emptyState.style.display='none'; fc.style.display='block'; fc.innerHTML=''; ot.style.display='block';
+  (curTmpl.fields||[]).forEach(field=>{
+    if(field._divider){const hr=document.createElement('hr');hr.className='f-divider';fc.appendChild(hr);return;}
+    const group=document.createElement('div'); group.className='fg'; group.dataset.fieldId=field.id;
+    const lrow=document.createElement('div'); lrow.className='fg-lrow';
+    const lbl=document.createElement('label'); lbl.textContent=field.label; lrow.appendChild(lbl);
+    const p=getProfile();
+    if(field.profileKey&&p[field.profileKey]){const badge=document.createElement('span');badge.className='fg-badge';badge.textContent='from profile';lrow.appendChild(badge);}
+    group.appendChild(lrow);
+
+    if(field.type==='listpicker'){group.appendChild(buildListpicker(field));}
+    else if(field.type==='list'){group.appendChild(buildListField(field));}
+    else if(field.type==='textarea'){
+      const ta=document.createElement('textarea'); ta.placeholder=field.placeholder||''; ta.rows=5; ta.value=fieldValues[field.id]||'';
+      ta.addEventListener('input',()=>{fieldValues[field.id]=ta.value;updateOutput();}); group.appendChild(ta);
+    } else if(field.type==='select'){
+      const sel=document.createElement('select');
+      sel.innerHTML=`<option value="">— select —</option>`+(field.options||[]).map(o=>`<option value="${h(o)}" ${fieldValues[field.id]===o?'selected':''}>${h(o)}</option>`).join('');
+      sel.addEventListener('change',()=>{fieldValues[field.id]=sel.value;updateOutput();}); group.appendChild(sel);
+    } else {
+      const inp=document.createElement('input'); inp.type=field.type||'text'; inp.placeholder=field.placeholder||''; inp.value=fieldValues[field.id]||'';
+      inp.addEventListener('input',()=>{fieldValues[field.id]=inp.value;updateOutput();}); group.appendChild(inp);
+      if(field.sanitize){
+        const prev=document.createElement('div'); prev.className='f-san';
+        const update=()=>{const raw=inp.value.trim();if(!raw){prev.textContent='';return;}const san=field.sanitize==='url'?sanitizeUrl(raw):sanitizeDomain(raw);prev.textContent=san!==raw?`→ ${san}`:''};
+        inp.addEventListener('input',update); update(); group.appendChild(prev);
       }
-      lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
-      lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
+    }
 
-  // ── Trademark Infringement Notice ──────────────────────────
-  {
-    id: 'trademark_infringement',
-    name: 'Trademark Infringement Notice',
-    folder: 'Legal Notices',
+    if(field.hint){const hint=document.createElement('div');hint.className='f-hint';hint.textContent=field.hint;group.appendChild(hint);}
+    fc.appendChild(group);
+  });
+}
 
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
+function buildListpicker(field){
+  const wrap=document.createElement('div'); wrap.className='lp-wrap';
+  const sel=document.createElement('select');
+  const custom=document.createElement('input'); custom.type='text'; custom.className='lp-custom'; custom.placeholder=field.placeholder||'Type custom value…';
+  function refresh(){
+    const saved=getList(field.listKey),cur=fieldValues[field.id]||'';
+    sel.innerHTML=`<option value="">— select or type below —</option>`+saved.map(e=>`<option value="${h(e)}" ${cur===e?'selected':''}>${h(e)}</option>`).join('')+`<option value="__custom__" ${cur&&!saved.includes(cur)?'selected':''}>Custom…</option>`;
+    const isCustom=cur&&!saved.includes(cur);
+    custom.classList.toggle('show',isCustom||sel.value==='__custom__');
+    if(isCustom){sel.value='__custom__';custom.value=cur;}
+  }
+  sel.addEventListener('change',()=>{
+    if(sel.value==='__custom__'){custom.classList.add('show');custom.focus();fieldValues[field.id]=custom.value;}
+    else{custom.classList.remove('show');fieldValues[field.id]=sel.value;}
+    updateOutput();
+  });
+  custom.addEventListener('input',()=>{fieldValues[field.id]=custom.value;updateOutput();});
+  document.getElementById('btn-lists').addEventListener('click',()=>setTimeout(refresh,50));
+  refresh(); wrap.appendChild(sel); wrap.appendChild(custom); return wrap;
+}
 
-    fields: [
-      { id:'host',             label:'Host / provider',            type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare\u2026' },
-      { id:'client',           label:'Client',                     type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
-      { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL',     type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
-      { id:'client_url',       label:"Client's original website",  type:'text',       placeholder:'https://client-brand.com' },
-      { _divider: true },
-      { id:'jurisdiction',     label:'Trademark jurisdiction',     type:'text',       placeholder:'e.g. United States, European Union\u2026' },
-      { id:'trademark_number', label:'Trademark registration no.', type:'text',       placeholder:'e.g. US123456789' },
-      { id:'infringement_desc',label:'What was infringed',         type:'textarea',   placeholder:'e.g. logo and name to provide a similar product / content from our client website', hint:'Describe specifically what the infringer copied or misused.' },
-      { _divider: true },
-      { id:'company_name',     label:'Your company name',          type:'text',       placeholder:'Acme Legal Inc.', profileKey:'company' },
-      { id:'our_case_id',      label:'Case ID',                    type:'text',       placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',        label:'System timestamp',           type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
+function buildListField(field){
+  const container=document.createElement('div');
+  if(!Array.isArray(fieldValues[field.id])) fieldValues[field.id]=[''];
+  function renderRows(){
+    container.innerHTML='';
+    fieldValues[field.id].forEach((val,idx)=>{
+      const row=document.createElement('div'); row.className='lf-row';
+      const inp=document.createElement('input'); inp.type='text'; inp.placeholder=field.placeholder||''; inp.value=val;
+      inp.addEventListener('input',()=>{fieldValues[field.id][idx]=inp.value;updateOutput();});
+      const rb=document.createElement('button'); rb.className='btn-icon rem'; rb.innerHTML='×';
+      rb.addEventListener('click',()=>{fieldValues[field.id].splice(idx,1);if(!fieldValues[field.id].length)fieldValues[field.id]=[''];renderRows();updateOutput();});
+      row.appendChild(inp);row.appendChild(rb);container.appendChild(row);
+    });
+    const ab=document.createElement('button'); ab.className='add-row-btn'; ab.textContent='+ Add row';
+    ab.addEventListener('click',()=>{fieldValues[field.id].push('');renderRows();updateOutput();});
+    container.appendChild(ab);
+  }
+  renderRows(); return container;
+}
 
-    render(v) {
-      const ts     = v.timestamp || nowUtc();
-      const client = v.client || '[client]';
-      const host   = v.host || '[Host name]';
-      const us     = sanitizeUrl(v.infringing_url) || '[infringing website URL]';
-      const lines  = [];
-      lines.push(`Subject: Trademark infringement in relation to ${us}`);
-      lines.push(`\nDear ${host},`);
-      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${us}`);
-      lines.push(`And the original material of our client is at: ${v.client_url || "[client's website URL]"}`);
-      lines.push(`\n${client} owns a ${v.jurisdiction || '[country jurisdiction]'} registered trademark under registration number: ${v.trademark_number || '[trademark number]'}. See attached proof of registration.`);
-      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
-      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.`);
-      lines.push(`\nRegards,\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
+// ═══════════════════════════════════════════════
+// OUTPUT
+// ═══════════════════════════════════════════════
 
-    renderHtml(v) {
-      const ts         = v.timestamp || nowUtc();
-      const clientSpan = fs('client', v.client, '[client]');
-      const hostSpan   = fs('host', v.host, '[Host name]');
-      const us         = sanitizeUrl(v.infringing_url);
-      const lines      = [];
-      lines.push(hesc('Subject: Trademark infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
-      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(','));
-      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc('. It has come to our attention that a website your company hosts may be infringing on one of ') + clientSpan + hesc("'s trademarks. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringing website URL]'));
-      lines.push(hesc("And the original material of our client is at: ") + fs('client_url', v.client_url, "[client's website URL]"));
-      lines.push('\n' + clientSpan + hesc(' owns a ') + fs('jurisdiction', v.jurisdiction, '[country jurisdiction]') + hesc(' registered trademark under registration number: ') + fs('trademark_number', v.trademark_number, '[trademark number]') + hesc('. See attached proof of registration.'));
-      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(', creating confusion for ') + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
-      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the trademark in question.'));
-      lines.push('\n' + hesc('Regards,\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
+function highlightField(fieldId){
+  const fc = document.getElementById('fields-container');
+  fc.querySelectorAll('.field-flash').forEach(el => el.classList.remove('field-flash'));
+  const group = fc.querySelector(`[data-field-id="${fieldId}"]`);
+  if(!group) return;
+  group.scrollIntoView({behavior:'smooth',block:'center'});
+  void group.offsetWidth;
+  group.classList.add('field-flash');
+  const inp = group.querySelector('input,select,textarea');
+  if(inp) inp.focus({ preventScroll: true }); // Focuses instantly without breaking the scroll
+}
 
-  // ── US Hosting Infringement Notice ──────────────────────────
-  {
-    id: 'us_host_infringement',
-    name: 'US Host Infringement Notice',
-    folder: 'Legal Notices',
+// Click delegation on output panel
+document.getElementById('out-text').addEventListener('click',e=>{
+  const span = e.target.closest('.out-field');
+  if(span) highlightField(span.dataset.field);
+});
 
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.your_name && p.name) fv.your_name = p.name;
-      if (!fv.your_email && p.email) fv.your_email = p.email;
-    },
-
-    fields: [
-      { id:'infringement_type',label:'Infringement type',      type:'select',     options:['Copyright','Trademark','Copyright and Trademark'] },
-      { id:'host',             label:'Host / provider',        type:'listpicker', listKey:'hosts',   placeholder:'e.g. Cloudflare\u2026' },
-      { id:'client',           label:'Client',                 type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
-      { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL', type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
-      { id:'client_url',       label:"Client's original website", type:'text',    placeholder:'https://client-brand.com' },
-      { id:'infringement_desc',label:'What was infringed',     type:'textarea',   placeholder:'e.g. logo and name to provide a similar product...' },
-      { _divider: true },
-      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' },
-      { id:'your_email',       label:'Your email address',     type:'email',      placeholder:'jane@phishfort.com', profileKey:'email' },
-      { id:'signature',        label:'Signature',              type:'text',       placeholder:'J.M. Smith', hint:'Your initials and surname' }
-    ],
-
-    render(v) {
-      const type   = v.infringement_type || '[Copyright / Trademark]';
-      const client = v.client || '[client]';
-      const host   = v.host || '[Host name]';
-      const us     = sanitizeUrl(v.infringing_url) || '[infringing website]';
-      const lines  = [];
-      lines.push(`Subject: ${type} infringement in relation to ${us}`);
-      lines.push(`\nDear ${host}`);
-      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${us}`);
-      lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
-      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
-      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
-      lines.push(`\nYou may use the following contact information for any further correspondence:`);
-      lines.push(`${v.your_name || '[Your name]'}`);
-      lines.push(`160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)`);
-      lines.push(`${v.your_email || '[Your email address]'}`);
-      lines.push(`\nRegards`);
-      lines.push(`Signed:`);
-      lines.push(`${v.signature || '[Your initials and surname]'}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
-      const clientSpan = fs('client', v.client, '[client]');
-      const hostSpan   = fs('host', v.host, '[Host name]');
-      const us         = sanitizeUrl(v.infringing_url);
-      const lines      = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
-      lines.push('\n' + hesc('Dear ') + hostSpan);
-      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website your company hosts may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringing website]'));
-      lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
-      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
-      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
-      lines.push('\n' + hesc('You may use the following contact information for any further correspondence:'));
-      lines.push(fs('your_name', v.your_name, '[Your name]'));
-      lines.push(hesc('160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)'));
-      lines.push(fs('your_email', v.your_email, '[Your email address]'));
-      lines.push('\n' + hesc('Regards'));
-      lines.push(hesc('Signed:'));
-      lines.push(fs('signature', v.signature, '[Your initials and surname]'));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Non-US Hosting Infringement Notice ──────────────────────
-  {
-    id: 'non_us_host_infringement',
-    name: 'Non-US Host Infringement Notice',
-    folder: 'Legal Notices',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.your_email && p.email) fv.your_email = p.email;
-    },
-
-    fields: [
-      { id:'infringement_type',label:'Infringement type',      type:'select',     options:['Copyright','Trademark','Copyright and Trademark'] },
-      { id:'host',             label:'Host / provider',        type:'listpicker', listKey:'hosts',   placeholder:'e.g. Hetzner\u2026' },
-      { id:'client',           label:'Client (short name)',    type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
-      { id:'client_details',   label:'Client full details',    type:'textarea',   placeholder:'Full name, co. registration number, location\u2026', hint:'Used in the opening paragraph.' },
-      { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL', type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
-      { id:'client_url',       label:"Client's original website", type:'text',    placeholder:'https://client-brand.com' },
-      { id:'infringement_desc',label:'What was infringed',     type:'textarea',   placeholder:'e.g. logo and name to provide a similar product...' },
-      { _divider: true },
-      { id:'your_email',       label:'Your email address',     type:'email',      placeholder:'jane@phishfort.com', profileKey:'email' }
-    ],
-
-    render(v) {
-      const type    = v.infringement_type || '[Copyright / Trademark]';
-      const client  = v.client || '[client]';
-      const details = v.client_details || '[client’s full name, co. registration number, location]';
-      const host    = v.host || '[Host name]';
-      const us      = sanitizeUrl(v.infringing_url) || '[infringer website]';
-      const lines   = [];
-      lines.push(`Subject: ${type} infringement in relation to ${us}`);
-      lines.push(`\nDear ${host}`);
-      lines.push(`\nWe act on behalf of our client, ${details}. It has come to our attention that a website your company hosts may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${us}`);
-      lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
-      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
-      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
-      lines.push(`\nYou may use the following email address for any further correspondence: ${v.your_email || '[your email address]'}`);
-      lines.push(`\nRegards`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const typeSpan    = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
-      const clientSpan  = fs('client', v.client, '[client]');
-      const detailsSpan = fs('client_details', v.client_details, '[client’s full name, co. registration number, location]');
-      const hostSpan    = fs('host', v.host, '[Host name]');
-      const us          = sanitizeUrl(v.infringing_url);
-      const lines       = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
-      lines.push('\n' + hesc('Dear ') + hostSpan);
-      lines.push('\n' + hesc('We act on behalf of our client, ') + detailsSpan + hesc(". It has come to our attention that a website your company hosts may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringer website]'));
-      lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
-      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
-      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
-      lines.push('\n' + hesc('You may use the following email address for any further correspondence: ') + fs('your_email', v.your_email, '[your email address]'));
-      lines.push('\n' + hesc('Regards'));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Registrar Infringement Notice ─────────────────────────────
-  {
-    id: 'registrar_infringement',
-    name: 'Registrar Infringement Notice',
-    folder: 'Legal Notices',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.your_name && p.name) fv.your_name = p.name;
-      if (!fv.your_email && p.email) fv.your_email = p.email;
-    },
-
-    fields: [
-      { id:'infringement_type',label:'Infringement type',      type:'select',     options:['Copyright','Trademark','Copyright and Trademark'] },
-      { id:'registrar',        label:'Registrar',              type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
-      { id:'client',           label:'Client',                 type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
-      { _divider: true },
-      { id:'infringing_url',   label:'Infringing website URL', type:'text',       placeholder:'https://infringing-site.com', sanitize:'url' },
-      { id:'client_url',       label:"Client's original website", type:'text',    placeholder:'https://client-brand.com' },
-      { id:'infringement_desc',label:'What was infringed',     type:'textarea',   placeholder:'e.g. logo and name to provide a similar product...' },
-      { _divider: true },
-      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' },
-      { id:'your_email',       label:'Your email address',     type:'email',      placeholder:'jane@phishfort.com', profileKey:'email' },
-      { id:'signature',        label:'Signature',              type:'text',       placeholder:'J.M. Smith', hint:'Your initials and surname' }
-    ],
-
-    render(v) {
-      const type   = v.infringement_type || '[Copyright / Trademark]';
-      const client = v.client || '[client]';
-      const reg    = v.registrar || '[Registrar name]';
-      const us     = sanitizeUrl(v.infringing_url) || '[infringing website]';
-      const lines  = [];
-      lines.push(`Subject: ${type} infringement in relation to ${us}`);
-      lines.push(`\nDear ${reg}`);
-      lines.push(`\nWe act on behalf of our client, ${client}. It has come to our attention that a website for which your company is the registrar may be infringing on one of ${client}'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed.`);
-      lines.push(`\nThe infringing material is found at: ${us}`);
-      lines.push(`And the original material of our client is at: ${v.client_url || '[client website]'}`);
-      lines.push(`\nThe infringer has copied and used ${client}'s ${v.infringement_desc || '[description of infringement]'}, creating confusion for ${client}'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ${client}'s permission.`);
-      lines.push(`\nWe are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.`);
-      lines.push(`\nYou may use the following contact information for any further correspondence:`);
-      lines.push(`${v.your_name || '[Your name]'}`);
-      lines.push(`PhishFort, 160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)`);
-      lines.push(`${v.your_email || '[Your email address]'}`);
-      lines.push(`\nRegards`);
-      lines.push(`Signed: ${v.signature || '[Your initials and surname]'}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const typeSpan   = fs('infringement_type', v.infringement_type, '[Copyright / Trademark]');
-      const clientSpan = fs('client', v.client, '[client]');
-      const regSpan    = fs('registrar', v.registrar, '[Registrar name]');
-      const us         = sanitizeUrl(v.infringing_url);
-      const lines      = [];
-      lines.push(hesc('Subject: ') + typeSpan + hesc(' infringement in relation to ') + fs('infringing_url', us, '[infringing website]'));
-      lines.push('\n' + hesc('Dear ') + regSpan);
-      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(". It has come to our attention that a website for which your company is the registrar may be infringing on one of ") + clientSpan + hesc("'s trademarks and/or copyrights. We request your cooperation to have the infringing content removed."));
-      lines.push('\n' + hesc('The infringing material is found at: ') + fs('infringing_url', us, '[infringer website]'));
-      lines.push(hesc('And the original material of our client is at: ') + fs('client_url', v.client_url, '[client website]'));
-      lines.push('\n' + hesc('The infringer has copied and used ') + clientSpan + hesc("'s ") + fs('infringement_desc', v.infringement_desc, '[description of infringement]') + hesc(", creating confusion for ") + clientSpan + hesc("'s customers and therefore harm to the business of our client. Our client is not related to nor does it have any affiliation to the infringer and the infringing content was published on your servers without ") + clientSpan + hesc("'s permission."));
-      lines.push('\n' + hesc('We are sending this notice under a good faith belief that use of the materials, described above as allegedly infringing, is not authorized by the copyright/trademark owner, its agent, or the law. We certify, under the penalty of perjury, that the information in this notice is correct. We have the authority to act on behalf of the person who owns the copyright/trademark in question.'));
-      lines.push('\n' + hesc('You may use the following contact information for any further correspondence:'));
-      lines.push(fs('your_name', v.your_name, '[Your name]'));
-      lines.push(hesc('PhishFort, 160 Robinson Road, #14-04 Singapore Business Federation Centre Singapore (068914)'));
-      lines.push(fs('your_email', v.your_email, '[Your email address]'));
-      lines.push('\n' + hesc('Regards'));
-      lines.push(hesc('Signed: ') + fs('signature', v.signature, '[Your initials and surname]'));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Phishing App Takedown Request ───────────────────────────
-  {
-    id: 'app_takedown',
-    name: 'Phishing App Takedown Request',
-    folder: 'Abuse Reports',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
-
-    fields: [
-      { id:'host',             label:'Host / App Store',           type:'listpicker', listKey:'hosts',   placeholder:'e.g. Google Play, Apple\u2026' },
-      { id:'client',           label:'Client',                     type:'listpicker', listKey:'clients', placeholder:'Client name\u2026' },
-      { id:'client_url',       label:"Client's original website",  type:'text',       placeholder:'https://client-brand.com' },
-      { _divider: true },
-      { id:'offending_url',    label:'Phishing App URL',           type:'text',       placeholder:'https://malicious-store.com/app...', sanitize:'url' },
-      { id:'ip_address',       label:'IP address',                 type:'text',       placeholder:'e.g. 192.168.1.1' },
-      { _divider: true },
-      { id:'company_name',     label:'Your company name',          type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' },
-      { id:'our_case_id',      label:'Case ID',                    type:'text',       placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',        label:'System timestamp',           type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
-
-    render(v) {
-      const ts     = v.timestamp || nowUtc();
-      const client = v.client || '[client]';
-      const host   = v.host || '[website owner]';
-      const us     = sanitizeUrl(v.offending_url) || '[phishing URL]';
-      const lines  = [];
-      lines.push(`Subject: [URGENT] Phishing App Takedown Request for ${us}`);
-      lines.push(`\nDear ${host} Abuse Team,`);
-      lines.push(`\nWe act on behalf of our client, ${client} found at ${v.client_url || '[client URL]'}. It has come to our attention that an unauthorised link to our client’s App is being hosted on your website, and is being used to conduct a phishing attack against ${client}.`);
-      lines.push(`\nThe link to the App is found at: ${us}`);
-      lines.push(`IP address of phishing domain: ${v.ip_address || '[IP address]'}`);
-      lines.push(`\nOur client has not authorized the use of this App, and is not related to nor does it have any affiliation to the publishers of this App. Given the severity of harm caused to our client, we request your urgent assistance to have the malicious App removed.`);
-      lines.push(`\nPlease let us know if you require any further information to have the content removed swiftly.`);
-      lines.push(`\nKind regards,\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const ts         = v.timestamp || nowUtc();
-      const clientSpan = fs('client', v.client, '[client]');
-      const hostSpan   = fs('host', v.host, '[website owner]');
-      const us         = sanitizeUrl(v.offending_url);
-      const lines      = [];
-      lines.push(hesc('Subject: [URGENT] Phishing App Takedown Request for ') + fs('offending_url', us, '[phishing URL]'));
-      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(' Abuse Team,'));
-      lines.push('\n' + hesc('We act on behalf of our client, ') + clientSpan + hesc(' found at ') + fs('client_url', v.client_url, '[client URL]') + hesc('. It has come to our attention that an unauthorised link to our client’s App is being hosted on your website, and is being used to conduct a phishing attack against ') + clientSpan + hesc('.'));
-      lines.push('\n' + hesc('The link to the App is found at: ') + fs('offending_url', us, '[phishing URL]'));
-      lines.push(hesc('IP address of phishing domain: ') + fs('ip_address', v.ip_address, '[IP address]'));
-      lines.push('\n' + hesc('Our client has not authorized the use of this App, and is not related to nor does it have any affiliation to the publishers of this App. Given the severity of harm caused to our client, we request your urgent assistance to have the malicious App removed.'));
-      lines.push('\n' + hesc('Please let us know if you require any further information to have the content removed swiftly.'));
-      lines.push('\n' + hesc('Kind regards,\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Email Phishing Domain Takedown ──────────────────────────
-  {
-    id: 'email_phishing_takedown',
-    name: 'Email Phishing Domain Takedown',
-    folder: 'Abuse Reports',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
-
-    fields: [
-      { id:'host',             label:'Hosting provider',               type:'listpicker', listKey:'hosts',    placeholder:'e.g. Cloudflare\u2026' },
-      { id:'client',           label:'Client',                         type:'listpicker', listKey:'clients',  placeholder:'Client name\u2026' },
-      { id:'abuse_type',       label:'Abuse type',                     type:'select',     options:['Phishing','Malware Distribution','Spam','Brand Impersonation','Scam','Other'] },
-      { _divider: true },
-      { id:'offending_url',    label:'Phishing website URL',           type:'text',       placeholder:'https://malicious-domain.com/\u2026', sanitize:'url' },
-      { id:'ip_address',       label:'IP address of domain',           type:'text',       placeholder:'e.g. 192.168.1.1' },
-      { id:'phishing_email',   label:'Phisher’s email address',        type:'email',      placeholder:'attacker@malicious-domain.com' },
-      { id:'original_domain',  label:'Legitimate domain impersonated', type:'text',       placeholder:'legitimate-brand.com' },
-      { _divider: true },
-      { id:'email_description',label:'Email behavior description',     type:'textarea',   placeholder:'e.g. inducing clients to download malware...', hint:'What is the email asking users to do?' },
-      { _divider: true },
-      { id:'company_name',     label:'Your company name',              type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' },
-      { id:'our_case_id',      label:'Case ID',                        type:'text',       placeholder:'CASE-2024-XXXXX' },
-      { id:'timestamp',        label:'System timestamp',               type:'text',       placeholder:'Auto-filled if left blank', hint:'Leave blank to auto-fill current UTC time.' },
-    ],
-
-    render(v) {
-      const ts      = v.timestamp || nowUtc();
-      const abuse   = ABUSE_MAP[v.abuse_type] || v.abuse_type || '[abuse type]';
-      const host    = v.host || '[Host Provider]';
-      const us      = sanitizeUrl(v.offending_url) || '[phishing website]';
-      const client  = v.client || '[client]';
-      const defDesc = `[inducing clients to download malware / encouraging users to share their passwords and private information / falsely representing themselves to be ${client}]`;
-      const lines   = [];
-      lines.push(`Subject: [URGENT] Phishing Domain Takedown Request for ${us}`);
-      lines.push(`\nDear ${host} Abuse Team`);
-      lines.push(`\nWe have identified that the resource listed below is being used to facilitate ${abuse}. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.`);
-      lines.push(`\nAs the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.`);
-      lines.push(`\nThe phishing domain is found at: ${us}`);
-      lines.push(`IP address of phishing domain: ${v.ip_address || '[IP address]'}`);
-      lines.push(`Phisher’s email address: ${v.phishing_email || '[phishing email address]'}`);
-      lines.push(`Legitimate domain being impersonated: ${v.original_domain || '[original domain]'}`);
-      lines.push(`\nIn support of this claim, please find the relevant phishing email headers attached.`);
-      lines.push(`\nThe emails are ${v.email_description || defDesc}. Our client is not related to nor does it have any affiliation to the phishers.`);
-      lines.push(`\nGiven the severity of harm caused, we request your urgent assistance to have the malicious site shut down.`);
-      lines.push(`\nPlease confirm receipt of this report and inform us of the outcome of your investigation.`);
-      lines.push(`\nSincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
-      lines.push(`\n${'─'.repeat(55)}\nINTERNAL REFERENCE`);
-      if (v.client) lines.push(`Client:    ${v.client}`);
-      lines.push(`Case ID:   ${v.our_case_id || '[Case ID]'}`);
-      lines.push(`Timestamp: ${ts}`);
-      return lines.join('\n');
-    },
-
-    renderHtml(v) {
-      const ts         = v.timestamp || nowUtc();
-      const abuse      = ABUSE_MAP[v.abuse_type] || v.abuse_type;
-      const hostSpan   = fs('host', v.host, '[Host Provider]');
-      const us         = sanitizeUrl(v.offending_url);
-      const client     = v.client || '[client]';
-      const defDesc    = `[inducing clients to download malware / encouraging users to share their passwords and private information / falsely representing themselves to be ${client}]`;
-      const lines      = [];
-      lines.push(hesc('Subject: [URGENT] Phishing Domain Takedown Request for ') + fs('offending_url', us, '[phishing website]'));
-      lines.push('\n' + hesc('Dear ') + hostSpan + hesc(' Abuse Team'));
-      lines.push('\n' + hesc('We have identified that the resource listed below is being used to facilitate ') + fs('abuse_type', abuse, '[abuse type]') + hesc('. This activity poses a security risk to internet users and appears to violate standard Acceptable Use Policies.'));
-      lines.push('\n' + hesc('As the sponsoring provider, we request that you investigate this resource and take appropriate mitigation action in accordance with your abuse policies and relevant industry agreements.'));
-      lines.push('\n' + hesc('The phishing domain is found at: ') + fs('offending_url', us, '[phishing URL]'));
-      lines.push(hesc('IP address of phishing domain: ') + fs('ip_address', v.ip_address, '[IP address]'));
-      lines.push(hesc('Phisher’s email address: ') + fs('phishing_email', v.phishing_email, '[phishing email address]'));
-      lines.push(hesc('Legitimate domain being impersonated: ') + fs('original_domain', v.original_domain, '[original domain]'));
-      lines.push('\n' + hesc('In support of this claim, please find the relevant phishing email headers attached.'));
-      lines.push('\n' + hesc('The emails are ') + fs('email_description', v.email_description, defDesc) + hesc('. Our client is not related to nor does it have any affiliation to the phishers.'));
-      lines.push('\n' + hesc('Given the severity of harm caused, we request your urgent assistance to have the malicious site shut down.'));
-      lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.'));
-      lines.push('\n' + hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
-      lines.push('\n' + hesc('─'.repeat(55)) + '\n' + hesc('INTERNAL REFERENCE'));
-      if (v.client) lines.push(hesc('Client:    ') + fs('client', v.client));
-      lines.push(hesc('Case ID:   ') + fs('our_case_id', v.our_case_id, '[Case ID]'));
-      lines.push(hesc('Timestamp: ') + fs('timestamp', ts));
-      return lines.join('\n');
-    },
-  },
-
-  // ── Registrar Refusal Pushback ─────────────────────────────
-  {
-    id: 'registrar_pushback',
-    name: 'Registrar Refusal Pushback',
-    folder: 'Follow-Ups',
-
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.company_name && p.company) fv.company_name = p.company;
-    },
-
-    fields: [
-      { id:'registrar',        label:'Registrar',              type:'listpicker', listKey:'registrars', placeholder:'e.g. GoDaddy\u2026' },
-      { id:'their_case_id',    label:'Their ticket / case ID', type:'text',       placeholder:"Ref from the registrar's reply" },
-      { id:'offending_domain', label:'Offending domain',       type:'text',       placeholder:'malicious-domain.com', sanitize:'domain' },
-      { _divider: true },
-      { id:'company_name',     label:'Your company name',      type:'text',       placeholder:'Acme Security Inc.', profileKey:'company' }
-    ],
-
-    render(v) {
-      const regSpan = v.registrar ? v.registrar + ' ' : '';
-      const ds      = sanitizeDomain(v.offending_domain) || '[offending domain]';
-      const lines   = [];
+function updateOutput(){
+  if(!curTmpl) return;
+  const rv={};
+  Object.entries(fieldValues).forEach(([k,v])=>{rv[k]=Array.isArray(v)?v.filter(s=>s.trim()!==''):v;});
+  const otEl=document.getElementById('out-text');
+  
+  let finalHtml = '';
+  if(curTmpl.renderHtml){
+    finalHtml = curTmpl.renderHtml(rv);
+  } else {
+    const plain = curTmpl.render(rv);
+    finalHtml = renderUserTemplateHtml(curTmpl._ut||{outputTemplate:plain,fields:curTmpl.fields||[]},rv);
+  }
+  
+  const btnCopySubj = document.getElementById('btn-copy-subj');
+  const btnCopy = document.getElementById('btn-copy');
+  
+  let lines = finalHtml.split('\n');
+  let subjectHtml = '';
+  let bodyHtml = finalHtml;
+  
+// Find the first line with actual text
+  let firstLineIdx = lines.findIndex(l => l.trim() !== '');
+  if (firstLineIdx !== -1) {
+    let firstLineText = lines[firstLineIdx].replace(/<[^>]+>/g, '').trim(); 
+    if (firstLineText.match(/^(Subject line:|Subject:|REPORT:)/i)) {
+      // Strip the literal "Subject:" label so it copies cleanly
+      subjectHtml = lines[firstLineIdx].replace(/^(<[^>]+>)*\s*(Subject line:|Subject:|REPORT:)\s*/i, '$1');
       
-      lines.push(`Subject: RE: Abuse Report - ${ds} - Ref: ${v.their_case_id || '[their case ID]'}`);
-      lines.push(`\nHi ${regSpan}Abuse team,`);
-      lines.push(`\nWe work with hundreds of registrars all over the world. While we are also working with the hosting provider to shut this website down, it still remains an obligation of the registrar to suspend the domain if it is clearly being used for illegal activity as is the case in question.`);
-      lines.push(`\nPlease see the final recommendation on the ICANN website here:\nhttps://www.icann.org/resources/pages/phishing-2013-05-03-en`);
-      lines.push(`\nwhich suggests contacting the registrar who has the ability to suspend the domain directly. This is outlined in more detail as a part of the ARRs which you as a registrar are bound to as a part of ICANN compliance:\nhttps://www.icann.org/resources/pages/approved-with-specs-2013-09-17-en`);
-      lines.push(`\nPlease kindly assist us by suspending this domain.`);
-      lines.push(`\nThank you.`);
-      lines.push(`\n${v.company_name || '[Company Name]'}`);
-      
-      return lines.join('\n');
-    },
+      // Remove subject and any blank lines directly under it from the body
+      lines.splice(0, firstLineIdx + 1);
+      while(lines.length > 0 && lines[0].trim() === '') lines.shift();
+      bodyHtml = lines.join('\n');
+    }
+  }
 
-    renderHtml(v) {
-      const regSpan = v.registrar ? fs('registrar', v.registrar) + ' ' : '';
-      const ds      = sanitizeDomain(v.offending_domain);
-      const lines   = [];
-      
-      lines.push(hesc('Subject: RE: Abuse Report - ') + fs('offending_domain', ds, '[offending domain]') + hesc(' - Ref: ') + fs('their_case_id', v.their_case_id, '[their case ID]'));
-      lines.push('\n' + hesc('Hi ') + regSpan + hesc('Abuse team,'));
-      lines.push('\n' + hesc('We work with hundreds of registrars all over the world. While we are also working with the hosting provider to shut this website down, it still remains an obligation of the registrar to suspend the domain if it is clearly being used for illegal activity as is the case in question.'));
-      lines.push('\n' + hesc('Please see the final recommendation on the ICANN website here:\nhttps://www.icann.org/resources/pages/phishing-2013-05-03-en'));
-      lines.push('\n' + hesc('which suggests contacting the registrar who has the ability to suspend the domain directly. This is outlined in more detail as a part of the ARRs which you as a registrar are bound to as a part of ICANN compliance:\nhttps://www.icann.org/resources/pages/approved-with-specs-2013-09-17-en'));
-      lines.push('\n' + hesc('Please kindly assist us by suspending this domain.'));
-      lines.push('\n' + hesc('Thank you.'));
-      lines.push('\n' + fs('company_name', v.company_name, '[Company Name]'));
-      
-      return lines.join('\n');
-    },
-  },
+  // VITAL FIX: Forcefully strip all rogue newlines/spaces at the start and end of the chunks
+  subjectHtml = subjectHtml.trim();
+  bodyHtml = bodyHtml.trim();
 
-  // ── Client Clarification Request ─────────────────────────────
-  {
-    id: 'client_clarification',
-    name: 'Client Clarification Request',
-    folder: 'Client Communications',
+  // Render the split UI if a subject exists (flattened to prevent pre-wrap phantom spacing)
+  if (subjectHtml) {
+    otEl.innerHTML = `<div style="padding-bottom:12px; border-bottom:1px dashed var(--b); margin-bottom:12px;"><div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Subject</div><div id="val-subj">${subjectHtml}</div></div><div><div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Body</div><div id="val-body">${bodyHtml}</div></div>`;
+    if (btnCopySubj) btnCopySubj.style.display = '';
+    if (btnCopy) btnCopy.textContent = 'Copy Body';
+  } else {
+    otEl.innerHTML = `<div id="val-body">${bodyHtml}</div>`;
+    if (btnCopySubj) btnCopySubj.style.display = 'none';
+    if (btnCopy) btnCopy.textContent = 'Copy to clipboard';
+  }
+  
+  otEl.style.display='block';
+}
 
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.your_name && p.name) fv.your_name = p.name;
-    },
+// ═══════════════════════════════════════════════
+// TOOLBAR
+// ═══════════════════════════════════════════════
+// Function to check if any fields are currently empty
+function hasEmptyFields() {
+  if (!curTmpl || !curTmpl.fields) return false;
+  return curTmpl.fields.some(f => {
+    if (f._divider || !f.id) return false;
+    const val = fieldValues[f.id];
+    if (Array.isArray(val)) return val.filter(s => s.trim()).length === 0;
+    return !val || String(val).trim() === '';
+  });
+}
 
-    fields: [
-      { id:'client_contact',   label:'Client contact name',    type:'text',       placeholder:'e.g. John' },
-      { id:'offending_domain', label:'Incident domain',        type:'text',       placeholder:'malicious-domain.com', sanitize:'domain' },
-      { id:'observation',      label:'What you observed',      type:'textarea',   placeholder:'e.g. the hosting service has been suspended...', hint:'Explain what looks different on your end.' },
-      { _divider: true },
-      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Jane Doe', profileKey:'name' }
-    ],
+// Function to actually execute the copy action
+function executeCopy(targetEl, btnEl) {
+  if(!targetEl) return;
+  const text = targetEl.innerText;
+  if(!text||text.startsWith('Select a template')) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig = btnEl.textContent;
+    btnEl.textContent = 'Copied!'; 
+    btnEl.style.cssText = 'background:#4ade80;border-color:#4ade80;color:#111;';
+    setTimeout(()=>{btnEl.textContent=orig;btnEl.style.cssText='';},1800);
+  });
+}
 
-    render(v) {
-      const contact = v.client_contact || '[name of client]';
-      const ds      = sanitizeDomain(v.offending_domain) || '[incident domain]';
-      const obs     = v.observation || '[the hosting service has been suspended / insert whatever stuff you saw upon investigation]';
-      const lines   = [];
-      
-      lines.push(`Subject: Clarification required regarding incident: ${ds}`);
-      lines.push(`\nHello ${contact}!`);
-      lines.push(`\nI'm working on your incident ${ds} and it seems like ${obs}. This is what I have on my side:`);
-      lines.push(`\n[insert screenshot]`);
-      lines.push(`\nPlease confirm if you can still see it on your end.`);
-      lines.push(`\nKind regards,\n${v.your_name || '[Your Name]'}`);
-      
-      return lines.join('\n');
-    },
+// State management for the warning modal
+let pendingCopyAction = null;
+const warningModal = document.getElementById('warning-modal');
 
-    renderHtml(v) {
-      const contact = fs('client_contact', v.client_contact, '[name of client]');
-      const ds      = sanitizeDomain(v.offending_domain);
-      const obs     = fs('observation', v.observation, '[the hosting service has been suspended / insert whatever stuff you saw upon investigation]');
-      const lines   = [];
-      
-      lines.push(hesc('Subject: Clarification required regarding incident: ') + fs('offending_domain', ds, '[incident domain]'));
-      lines.push('\n' + hesc('Hello ') + contact + hesc('!'));
-      lines.push('\n' + hesc("I'm working on your incident ") + fs('offending_domain', ds, '[incident domain]') + hesc(' and it seems like ') + obs + hesc('. This is what I have on my side:'));
-      lines.push('\n' + hesc('[insert screenshot]'));
-      lines.push('\n' + hesc('Please confirm if you can still see it on your end.'));
-      lines.push('\n' + hesc('Kind regards,\n') + fs('your_name', v.your_name, '[Your Name]'));
-      
-      return lines.join('\n');
-    },
-  },
+document.getElementById('btn-warn-cancel').addEventListener('click', () => {
+  warningModal.classList.remove('show');
+  pendingCopyAction = null;
+});
 
-  // ── Request Email Headers ───────────────────────────────────
-  {
-    id: 'client_email_headers',
-    name: 'Request Email Headers',
-    folder: 'Client Communications',
+document.getElementById('btn-warn-confirm').addEventListener('click', () => {
+  warningModal.classList.remove('show');
+  if (pendingCopyAction) pendingCopyAction();
+  pendingCopyAction = null;
+});
 
-    onLoad(fv) {
-      const p = getProfile();
-      if (!fv.your_name && p.name) fv.your_name = p.name;
-      if (!fv.department && p.dept) fv.department = p.dept;
-    },
+// Intercept clicks on the copy buttons
+function handleCopyClick(targetId, btnId) {
+  const targetEl = document.getElementById(targetId) || document.getElementById('out-text');
+  const btnEl = document.getElementById(btnId);
+  if(!targetEl || !btnEl) return;
+  
+  const action = () => executeCopy(targetEl, btnEl);
+  
+  if (hasEmptyFields()) {
+    pendingCopyAction = action;
+    warningModal.classList.add('show');
+  } else {
+    action(); // Copy immediately if everything is filled out
+  }
+}
 
-    fields: [
-      { id:'client_contact',   label:'Client contact name',    type:'text',       placeholder:'e.g. John' },
-      { id:'offending_domain', label:'Incident domain',        type:'text',       placeholder:'malicious-domain.com', sanitize:'domain', hint:'Used for the subject line.' },
-      { _divider: true },
-      { id:'your_name',        label:'Your name',              type:'text',       placeholder:'Deon', profileKey:'name' },
-      { id:'department',       label:'Your department',        type:'text',       placeholder:'Phishfort Operations Team', profileKey:'dept' }
-    ],
+document.getElementById('btn-copy').addEventListener('click', () => {
+  handleCopyClick('val-body', 'btn-copy');
+});
 
-    render(v) {
-      const contact = v.client_contact || '[Client Correspondent]';
-      const name    = v.your_name || '[Your Name]';
-      const dept    = v.department || '[Your Department]';
-      const ds      = sanitizeDomain(v.offending_domain) || '[incident domain]';
-      const lines   = [];
-      
-      lines.push(`Subject: Action Required: Email headers needed for incident ${ds}`);
-      lines.push(`\nHi ${contact},`);
-      lines.push(`\nMy name is ${name}. I'm with the ${dept}, I'm the analyst handling your case. We got the email extracts and the phishing domain used in the attack. Thank you for the evidence. However, to build a stronger case we will need the email headers for that email exchange you provided.`);
-      lines.push(`\nThe headers provide the exact evidence we need to trace the path that the email took from sender to their target(s), along with the IP addresses and/or domains included in the attack.`);
-      lines.push(`\nIf you need help with how to get the headers please let me know and I will be happy to guide you through that.`);
-      lines.push(`\nPlease feel free to reach out if you need any clarity.`);
-      lines.push(`\nKind regards,\n${name}`);
-      
-      return lines.join('\n');
-    },
+const btnCopySubj = document.getElementById('btn-copy-subj');
+if(btnCopySubj) {
+  btnCopySubj.addEventListener('click', () => {
+    handleCopyClick('val-subj', 'btn-copy-subj');
+  });
+}
+document.getElementById('btn-clear').addEventListener('click',()=>{
+  if(!curTmpl) return; fieldValues={};
+  if(curTmpl.onLoad) curTmpl.onLoad(fieldValues);
+  renderFields(); updateOutput();
+});
 
-    renderHtml(v) {
-      const contact = fs('client_contact', v.client_contact, '[Client Correspondent]');
-      const name    = fs('your_name', v.your_name, '[Your Name]');
-      const dept    = fs('department', v.department, '[Your Department]');
-      const ds      = sanitizeDomain(v.offending_domain);
-      const lines   = [];
-      
-      lines.push(hesc('Subject: Action Required: Email headers needed for incident ') + fs('offending_domain', ds, '[incident domain]'));
-      lines.push('\n' + hesc('Hi ') + contact + hesc(','));
-      lines.push('\n' + hesc('My name is ') + name + hesc(". I'm with the ") + dept + hesc(", I'm the analyst handling your case. We got the email extracts and the phishing domain used in the attack. Thank you for the evidence. However, to build a stronger case we will need the email headers for that email exchange you provided."));
-      lines.push('\n' + hesc('The headers provide the exact evidence we need to trace the path that the email took from sender to their target(s), along with the IP addresses and/or domains included in the attack.'));
-      lines.push('\n' + hesc('If you need help with how to get the headers please let me know and I will be happy to guide you through that.'));
-      lines.push('\n' + hesc('Please feel free to reach out if you need any clarity.'));
-      lines.push('\n' + hesc('Kind regards,\n') + name);
-      
-      return lines.join('\n');
-    },
-  },
+// ═══════════════════════════════════════════════
+// DRAFTS
+// ═══════════════════════════════════════════════
+const getDrafts=()=>{try{return JSON.parse(localStorage.getItem('to_drafts_v2')||'[]');}catch{return[];}};
+const saveDrafts=d=>localStorage.setItem('to_drafts_v2',JSON.stringify(d));
 
-];
+document.getElementById('btn-save-draft').addEventListener('click',()=>{
+  if(!curTmpl) return;
+  const name=prompt('Name this draft:',curTmpl.name); if(!name) return;
+  const drafts=getDrafts(); drafts.unshift({id:Date.now(),name,templateId:curTmpl.id,values:fieldValues});
+  saveDrafts(drafts); renderDrafts(); showToast(`Draft "${name}" saved.`);
+});
 
-const BUILTIN_FOLDERS = new Set(TEMPLATES.map(t => t.folder));
+function renderDrafts(){
+  const drafts=getDrafts(); const dl=document.getElementById('draft-list'); dl.innerHTML='';
+  if(!drafts.length){const el=document.createElement('div');el.style.cssText='font-size:12px;color:var(--tf);padding:4px 8px 8px;';el.textContent='No drafts yet.';dl.appendChild(el);return;}
+  drafts.forEach(draft=>{
+    const row=document.createElement('div'); row.className='draft-item';
+    const name=document.createElement('span'); name.textContent=draft.name;
+    const del=document.createElement('button'); del.className='draft-del'; del.innerHTML='×';
+    del.addEventListener('click',e=>{e.stopPropagation();saveDrafts(getDrafts().filter(d=>d.id!==draft.id));renderDrafts();});
+    row.appendChild(name);row.appendChild(del);
+    row.addEventListener('click',()=>{
+      const t=getAllTemplates().find(t=>t.id===draft.templateId);
+      if(t){closePanel();loadTemplate(t,draft.values);}else showToast('Template no longer exists.');
+    });
+    dl.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+renderTree();
+renderDrafts();
+loadProfileUI();
+</script>
+</body>
+</html>
