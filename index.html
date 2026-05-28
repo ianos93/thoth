@@ -204,6 +204,15 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
 #empty-state p{font-size:13px;}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--sr);border:1px solid var(--bs);border-radius:var(--r);padding:10px 16px;font-size:13px;color:var(--t);z-index:999;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
+/* Custom Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.show{display:flex;}
+.modal-content{background:var(--surface);border:1px solid var(--b);border-radius:var(--r);width:600px;max-width:95%;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+.modal-header{padding:14px 18px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600;color:var(--t);}
+.modal-body{padding:18px;display:flex;flex-direction:column;}
+.modal-footer{padding:14px 18px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--bg);border-radius:0 0 var(--r) var(--r);}
+#import-textarea{width:100%;font-size:13px;font-family:inherit;color:var(--t);background:var(--bg);border:1px solid var(--bs);border-radius:4px;padding:10px;outline:none;resize:vertical;}
+#import-textarea:focus{border-color:var(--ad);}
 </style>
 <script src="templates.js"></script>
 </head>
@@ -335,6 +344,19 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
     </div>
 
 
+  </div>
+</div>
+<div id="import-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">✨ Auto-Generate from Text</div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--tf);margin-bottom:12px;">Paste your raw email/template text here. The tool will look for anything inside brackets like [this] and automatically convert them into fields:</p>
+      <textarea id="import-textarea" rows="14" placeholder="Dear [Insert Host name]..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-import-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-import-confirm">Auto-Generate</button>
+    </div>
   </div>
 </div>
 
@@ -565,35 +587,44 @@ document.getElementById('bld-name').addEventListener('input',e=>{bld.name=e.targ
 document.getElementById('bld-folder').addEventListener('change',e=>{bld.folder=e.target.value;});
 document.getElementById('bld-output').addEventListener('input',e=>{bld.outputTemplate=e.target.value;});
 
-document.getElementById('btn-bld-import').addEventListener('click', () => {
-  const rawText = prompt('Paste your raw email/template text here.\n\nThe tool will look for anything inside brackets like [this] and automatically convert them into fields:');
-  
-  if (!rawText || !rawText.trim()) return;
+const importModal = document.getElementById('import-modal');
+const importTa = document.getElementById('import-textarea');
 
-  // Find anything inside [ ] or < > or { } (excluding our own {{ }})
+document.getElementById('btn-bld-import').addEventListener('click', () => {
+  importTa.value = ''; // clear previous input
+  importModal.classList.add('show');
+  setTimeout(() => importTa.focus(), 100);
+});
+
+document.getElementById('btn-import-cancel').addEventListener('click', () => {
+  importModal.classList.remove('show');
+});
+
+document.getElementById('btn-import-confirm').addEventListener('click', () => {
+  const rawText = importTa.value;
+  if (!rawText || !rawText.trim()) {
+    importModal.classList.remove('show');
+    return;
+  }
+
   const regex = /\[(.*?)\]|\<(.*?)\>|\{(?!\{)(.*?)(?!\})\}/g;
   let parsedOutput = rawText;
   let match;
-  
-  // Keep track of IDs we've already added so we don't make duplicate fields
   const existingIds = new Set(bld.fields.map(f => f.id));
 
   while ((match = regex.exec(rawText)) !== null) {
-    // Get the text inside the brackets (match[1] is [], match[2] is <>, match[3] is {})
     const rawLabel = match[1] || match[2] || match[3]; 
     if (!rawLabel) continue;
 
-    const cleanLabel = rawLabel.replace(/^insert /i, '').trim(); // Remove "insert " if they typed it
+    const cleanLabel = rawLabel.replace(/^insert /i, '').trim();
     const id = labelToId(cleanLabel);
 
-    // Replace the exact bracketed text with the builder token
     parsedOutput = parsedOutput.replace(match[0], `{{${id}}}`);
 
-    // Create the field if it doesn't exist yet
     if (!existingIds.has(id)) {
       bld.fields.push({
         id: id,
-        label: cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1), // Capitalize first letter
+        label: cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1),
         type: 'text',
         placeholder: `e.g. ${cleanLabel}…`,
         _manualId: true
@@ -602,10 +633,11 @@ document.getElementById('btn-bld-import').addEventListener('click', () => {
     }
   }
 
-  // Update the builder state and UI
   bld.outputTemplate = parsedOutput;
   document.getElementById('bld-output').value = parsedOutput;
   renderBldFields();
+  
+  importModal.classList.remove('show');
   showToast('Template auto-generated from text!');
 });
 
