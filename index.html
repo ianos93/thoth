@@ -804,13 +804,14 @@ function renderUserTemplate(tpl,fields,values){
   (fields||[]).forEach(f=>{
     if(f._divider||!f.id) return;
     let v=values[f.id]||'';
+    const placeholder = `[${f.label.toLowerCase()}]`; // Create a clean fallback text
     if(Array.isArray(v)) v=v.filter(s=>s.trim()).map(s=>'  • '+s).join('\n');
     else{
       v=String(v);
       if(f.sanitize==='url') v=sanitizeUrl(v)||v;
       else if(f.sanitize==='domain') v=sanitizeDomain(v)||v;
     }
-    r=r.split('{{'+f.id+'}}').join(v);
+    r=r.split('{{'+f.id+'}}').join(v || placeholder);
   });
   r=r.split('{{today}}').join(today()).split('{{timestamp}}').join(nowUtc());
   return r;
@@ -820,8 +821,10 @@ function renderUserTemplateHtml(ut,values){
   const tpl=ut.outputTemplate||'';
   const fields=ut.fields||[];
   const vals={};
+  const fieldMap={}; // Store field references so we can grab their labels
   fields.forEach(f=>{
     if(f._divider||!f.id) return;
+    fieldMap[f.id]=f;
     let v=values[f.id]||'';
     if(Array.isArray(v)) vals[f.id]=v.filter(s=>s.trim());
     else{
@@ -839,9 +842,14 @@ function renderUserTemplateHtml(ut,values){
     if(id==='today') return hesc(today());
     if(id==='timestamp') return hesc(nowUtc());
     const v=vals[id];
+    
+    // Auto-generate a placeholder like [original domain] using the field's label
+    const placeholder = fieldMap[id] ? `[${fieldMap[id].label.toLowerCase()}]` : `[${id}]`;
+    
     if(Array.isArray(v)&&v.length) return v.map(item=>`<span class="out-field" data-field="${id}">${hesc('  • '+item)}</span>`).join('\n');
-    if(v) return `<span class="out-field" data-field="${id}">${hesc(v)}</span>`;
-    return hesc(part);
+    
+    // Always wrap the output in the span so it highlights, whether filled or empty!
+    return `<span class="out-field" data-field="${id}">${hesc(v || placeholder)}</span>`;
   }).join('');
 }
 
