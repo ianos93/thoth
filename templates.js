@@ -9,12 +9,16 @@ const nowUtc = () => new Date().toISOString().replace('T', ' ').slice(0, 19) + '
 function sanitizeUrl(raw) {
   if (!raw) return raw;
   return raw
-    .replace(/^https?:\/\//i, m => m.replace(/https/i,'hxxps').replace(/http/i,'hxxp'))
+    .replace(/^https?:\/\//i, m => m.replace(/https/i,'hxxps').replace(/http/i,'hxxp').replace(':', '[:]'))
     .replace(/\./g, '[.]');
 }
 function sanitizeDomain(raw) {
   if (!raw) return raw;
   return raw.replace(/^https?:\/\//i, '').replace(/\./g, '[.]');
+}
+function sanitizeEmail(raw) {
+  if (!raw) return raw;
+  return raw.replace(/@/g, '[@]').replace(/\./g, '[.]');
 }
 function hesc(s) {
   return String(s||'')
