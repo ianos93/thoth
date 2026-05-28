@@ -361,6 +361,20 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
   </div>
 </div>
 
+<div id="warning-modal" class="modal-overlay">
+  <div class="modal-content" style="width:400px;">
+    <div class="modal-header" style="color: #f87171;">⚠️ Missing Information</div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;">You have empty fields in your report. Placeholders like <strong>[bracketed text]</strong> will be copied to your clipboard.</p>
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;margin-top:10px;">Are you sure you want to copy anyway?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-warn-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-warn-confirm" style="background:#f87171;border-color:#f87171;color:#111;">Copy anyway</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1160,29 +1174,69 @@ function updateOutput(){
 // ═══════════════════════════════════════════════
 // TOOLBAR
 // ═══════════════════════════════════════════════
-document.getElementById('btn-copy').addEventListener('click',()=>{
-  // Safely target the body, or fallback to the whole text area
-  const target = document.getElementById('val-body') || document.getElementById('out-text');
-  const text = target.innerText;
+// Function to check if any fields are currently empty
+function hasEmptyFields() {
+  if (!curTmpl || !curTmpl.fields) return false;
+  return curTmpl.fields.some(f => {
+    if (f._divider || !f.id) return false;
+    const val = fieldValues[f.id];
+    if (Array.isArray(val)) return val.filter(s => s.trim()).length === 0;
+    return !val || String(val).trim() === '';
+  });
+}
+
+// Function to actually execute the copy action
+function executeCopy(targetEl, btnEl) {
+  if(!targetEl) return;
+  const text = targetEl.innerText;
   if(!text||text.startsWith('Select a template')) return;
   navigator.clipboard.writeText(text).then(()=>{
-    const b=document.getElementById('btn-copy'),orig=b.textContent;
-    b.textContent='Copied!'; b.style.cssText='background:#4ade80;border-color:#4ade80;color:#111;';
-    setTimeout(()=>{b.textContent=orig;b.style.cssText='';},1800);
+    const orig = btnEl.textContent;
+    btnEl.textContent = 'Copied!'; 
+    btnEl.style.cssText = 'background:#4ade80;border-color:#4ade80;color:#111;';
+    setTimeout(()=>{btnEl.textContent=orig;btnEl.style.cssText='';},1800);
   });
+}
+
+// State management for the warning modal
+let pendingCopyAction = null;
+const warningModal = document.getElementById('warning-modal');
+
+document.getElementById('btn-warn-cancel').addEventListener('click', () => {
+  warningModal.classList.remove('show');
+  pendingCopyAction = null;
+});
+
+document.getElementById('btn-warn-confirm').addEventListener('click', () => {
+  warningModal.classList.remove('show');
+  if (pendingCopyAction) pendingCopyAction();
+  pendingCopyAction = null;
+});
+
+// Intercept clicks on the copy buttons
+function handleCopyClick(targetId, btnId) {
+  const targetEl = document.getElementById(targetId) || document.getElementById('out-text');
+  const btnEl = document.getElementById(btnId);
+  if(!targetEl || !btnEl) return;
+  
+  const action = () => executeCopy(targetEl, btnEl);
+  
+  if (hasEmptyFields()) {
+    pendingCopyAction = action;
+    warningModal.classList.add('show');
+  } else {
+    action(); // Copy immediately if everything is filled out
+  }
+}
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  handleCopyClick('val-body', 'btn-copy');
 });
 
 const btnCopySubj = document.getElementById('btn-copy-subj');
 if(btnCopySubj) {
-  btnCopySubj.addEventListener('click',()=>{
-    const target = document.getElementById('val-subj');
-    if(!target) return;
-    navigator.clipboard.writeText(target.innerText).then(()=>{
-      const orig = btnCopySubj.textContent;
-      btnCopySubj.textContent = 'Copied!'; 
-      btnCopySubj.style.cssText = 'background:#4ade80;border-color:#4ade80;color:#111;';
-      setTimeout(()=>{btnCopySubj.textContent=orig;btnCopySubj.style.cssText='';},1800);
-    });
+  btnCopySubj.addEventListener('click', () => {
+    handleCopyClick('val-subj', 'btn-copy-subj');
   });
 }
 document.getElementById('btn-clear').addEventListener('click',()=>{
