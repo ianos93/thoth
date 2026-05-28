@@ -742,7 +742,7 @@ function makeBldFieldCard(f,idx){
         <div class="bfc-eg full"><label>Help text (shown below field)</label><input class="bfc-hint" value="${h(f.hint||'')}" placeholder="Optional hint…"></div>
         <div class="bfc-eg bfc-opts-row${f.type==='select'?'':' bfc-hidden'}"><label>Options <small>(comma-separated)</small></label><input class="bfc-opts" value="${h((f.options||[]).join(', '))}" placeholder="Option 1, Option 2"></div>
         <div class="bfc-eg bfc-lk-row${f.type==='listpicker'?'':' bfc-hidden'}"><label>List source</label><select class="bfc-lk"><option value="registrars" ${f.listKey==='registrars'?'selected':''}>Registrars</option><option value="hosts" ${f.listKey==='hosts'?'selected':''}>Hosting Providers</option><option value="clients" ${f.listKey==='clients'?'selected':''}>Clients</option></select></div>
-        <div class="bfc-eg bfc-san-row${f.type==='text'?'':' bfc-hidden'}"><label>Sanitize output</label><select class="bfc-san"><option value="" ${!f.sanitize?'selected':''}>None</option><option value="url" ${f.sanitize==='url'?'selected':''}>URL (hxxps + [.])</option><option value="domain" ${f.sanitize==='domain'?'selected':''}>Domain ([.])</option></select></div>
+        <div class="bfc-eg bfc-san-row${(f.type==='text'||f.type==='email')?'':' bfc-hidden'}"><label>Sanitize output</label><select class="bfc-san"><option value="" ${!f.sanitize?'selected':''}>None</option><option value="url" ${f.sanitize==='url'?'selected':''}>URL (hxxps[:]// + [.])</option><option value="domain" ${f.sanitize==='domain'?'selected':''}>Domain ([.])</option><option value="email" ${f.sanitize==='email'?'selected':''}>Email ([@] and [.])</option></select></div>
         <div class="bfc-eg"><label>Pre-fill from profile</label><select class="bfc-pkey"><option value="">None</option><option value="company" ${f.profileKey==='company'?'selected':''}>Company name</option><option value="name" ${f.profileKey==='name'?'selected':''}>Your name</option><option value="email" ${f.profileKey==='email'?'selected':''}>Email</option><option value="role" ${f.profileKey==='role'?'selected':''}>Role</option><option value="dept" ${f.profileKey==='dept'?'selected':''}>Department</option></select></div>
       </div>
     </div>`;
@@ -811,6 +811,7 @@ function renderUserTemplate(tpl,fields,values){
       v=String(v);
       if(f.sanitize==='url') v=sanitizeUrl(v)||v;
       else if(f.sanitize==='domain') v=sanitizeDomain(v)||v;
+      else if(f.sanitize==='email') v=sanitizeEmail(v)||v; // <-- Add this line!
     }
     r=r.split('{{'+f.id+'}}').join(v || placeholder);
   });
