@@ -1195,6 +1195,30 @@ function executeCopy(targetEl, btnEl) {
     btnEl.textContent = 'Copied!'; 
     btnEl.style.cssText = 'background:#4ade80;border-color:#4ade80;color:#111;';
     setTimeout(()=>{btnEl.textContent=orig;btnEl.style.cssText='';},1800);
+
+    // Auto-save as a draft silently in the background
+    if (curTmpl) {
+      const drafts = getDrafts();
+      
+      // Try to grab the domain to make the draft easily identifiable, otherwise use the time
+      const identifier = fieldValues['offending_domain'] || fieldValues['offending_url'] || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const draftName = `Auto: ${curTmpl.name} (${identifier})`;
+      
+      // Check if we just saved this exact draft (prevents duplicates when clicking Copy Subject then Copy Body)
+      const lastDraft = drafts[0];
+      const isDuplicate = lastDraft && lastDraft.name === draftName && JSON.stringify(lastDraft.values) === JSON.stringify(fieldValues);
+      
+      if (!isDuplicate) {
+        // Save a copy of the current values
+        drafts.unshift({ id: Date.now(), name: draftName, templateId: curTmpl.id, values: { ...fieldValues } });
+        
+        // Optional: Keep the drafts list from growing infinitely (caps at 50 drafts)
+        if (drafts.length > 50) drafts.pop();
+        
+        saveDrafts(drafts);
+        renderDrafts();
+      }
+    }
   });
 }
 
