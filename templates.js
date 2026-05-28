@@ -285,8 +285,6 @@ const TEMPLATES = [
       if (v.blocklists?.length) {
         lines.push(`\nPlease note that the phishing URL is already flagged as malicious by the following reputed blocklists:`);
         v.blocklists.forEach(b => lines.push(`  \u2022 ${b}`));
-      } else {
-        lines.push(`\nPlease note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]`);
       }
       lines.push(`\nPlease confirm receipt of this report and inform us of the outcome of your investigation.\n`);
       lines.push(`Sincerely,\nAbuse Operations\n${v.company_name || '[Company Name]'}`);
@@ -319,8 +317,6 @@ const TEMPLATES = [
       if (v.blocklists?.length) {
         lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists:'));
         v.blocklists.forEach(b => lines.push(hesc('  \u2022 ') + fs('blocklists', b)));
-      } else {
-        lines.push('\n' + hesc('Please note that the phishing URL is already flagged as malicious by the following reputed blocklists: [insert link/screenshots of blocklisting] [VT, URLScan, Spamhaus, GSB]'));
       }
       lines.push('\n' + hesc('Please confirm receipt of this report and inform us of the outcome of your investigation.\n'));
       lines.push(hesc('Sincerely,\nAbuse Operations\n') + fs('company_name', v.company_name, '[Company Name]'));
