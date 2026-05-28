@@ -1142,18 +1142,9 @@ function updateOutput(){
   subjectHtml = subjectHtml.trim();
   bodyHtml = bodyHtml.trim();
 
-  // Render the split UI if a subject exists (with tighter margins)
+  // Render the split UI if a subject exists (flattened to prevent pre-wrap phantom spacing)
   if (subjectHtml) {
-    otEl.innerHTML = `
-      <div style="padding-bottom:12px; border-bottom:1px dashed var(--b); margin-bottom:12px;">
-        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Subject</div>
-        <div id="val-subj">${subjectHtml}</div>
-      </div>
-      <div>
-        <div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Body</div>
-        <div id="val-body">${bodyHtml}</div>
-      </div>
-    `;
+    otEl.innerHTML = `<div style="padding-bottom:12px; border-bottom:1px dashed var(--b); margin-bottom:12px;"><div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Subject</div><div id="val-subj">${subjectHtml}</div></div><div><div style="font-family:system-ui; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tf); margin-bottom:4px;">Body</div><div id="val-body">${bodyHtml}</div></div>`;
     if (btnCopySubj) btnCopySubj.style.display = '';
     if (btnCopy) btnCopy.textContent = 'Copy Body';
   } else {
