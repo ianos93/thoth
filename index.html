@@ -910,7 +910,14 @@ function renderTree(){
         ctrl.appendChild(dupeBtn); item.appendChild(ctrl);
       }
 
-      item.addEventListener('click',()=>{closePanel();loadTemplate(t);});
+      // Pass the current fieldValues but wipe specific fields to prevent errors
+      item.addEventListener('click', () => {
+        closePanel();
+        const carryOverValues = { ...fieldValues };
+        delete carryOverValues['their_case_id']; // Prevent mixing up tickets
+        delete carryOverValues['timestamp'];     // Force a fresh timestamp
+        loadTemplate(t, carryOverValues);
+      });
       kids.appendChild(item);
     });
 
