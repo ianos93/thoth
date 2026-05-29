@@ -220,6 +220,33 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
 .modal-footer{padding:14px 18px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--bg);border-radius:0 0 var(--r) var(--r);}
 #import-textarea{width:100%;font-size:13px;font-family:inherit;color:var(--t);background:var(--bg);border:1px solid var(--bs);border-radius:4px;padding:10px;outline:none;resize:vertical;}
 #import-textarea:focus{border-color:var(--ad);}
+/* Localized Warning Modal & Highlights */
+#warning-modal {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+#warning-modal.show { display: flex; }
+
+.field-error-pulse {
+  animation: errorPulse 2s infinite !important;
+  border-color: #f87171 !important;
+}
+.field-label-error {
+  color: #f87171 !important;
+}
+
+@keyframes errorPulse {
+  0% { box-shadow: 0 0 0 0 rgba(248,113,113,0.3); }
+  70% { box-shadow: 0 0 0 6px rgba(248,113,113,0); }
+  100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); }
+}
 </style>
 <script src="templates.js"></script>
 </head>
@@ -364,14 +391,15 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
   </div>
 </div>
 
-<div id="warning-modal" class="modal-overlay">
-  <div class="modal-content" style="width:400px;">
-    <div class="modal-header" style="color: #f87171;">⚠️ Missing Information</div>
+<div id="warning-modal">
+  <div class="modal-content" style="width:400px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); background: var(--surface);">
+    <div class="modal-header" style="color: #f87171; border-bottom: 1px solid var(--b);">⚠️ Missing Information</div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--tm);line-height:1.5;">You have empty fields in your report. Placeholders like <strong>[bracketed text]</strong> will be copied to your clipboard.</p>
-      <p style="font-size:13px;color:var(--tm);line-height:1.5;margin-top:10px;">Are you sure you want to copy anyway?</p>
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;">You have empty fields in your report:</p>
+      <ul id="missing-fields-list" style="font-size:13px; color:#f87171; margin: 12px 0 12px 24px; font-weight: 600; line-height: 1.6;"></ul>
+      <p style="font-size:13px;color:var(--tm);line-height:1.5;">Placeholders will be copied to your clipboard. Are you sure you want to copy anyway?</p>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="border-top: 1px solid var(--b);">
       <button class="btn btn-ghost" id="btn-warn-cancel">Cancel</button>
       <button class="btn btn-primary" id="btn-warn-confirm" style="background:#f87171;border-color:#f87171;color:#111;">Copy anyway</button>
     </div>
@@ -1340,15 +1368,21 @@ function updateOutput(){
 // ═══════════════════════════════════════════════
 // TOOLBAR
 // ═══════════════════════════════════════════════
-// Function to check if any fields are currently empty
-function hasEmptyFields() {
-  if (!curTmpl || !curTmpl.fields) return false;
-  return curTmpl.fields.some(f => {
+// Function to get the specific empty fields (not just true/false)
+function getEmptyFields() {
+  if (!curTmpl || !curTmpl.fields) return [];
+  return curTmpl.fields.filter(f => {
     if (f._divider || !f.id) return false;
     const val = fieldValues[f.id];
     if (Array.isArray(val)) return val.filter(s => s.trim()).length === 0;
     return !val || String(val).trim() === '';
   });
+}
+
+// Function to clear the red error highlights from the sidebar
+function clearErrorHighlights() {
+  document.querySelectorAll('.field-error-pulse').forEach(el => el.classList.remove('field-error-pulse'));
+  document.querySelectorAll('.field-label-error').forEach(el => el.classList.remove('field-label-error'));
 }
 
 // Function to actually execute the copy action
@@ -1395,12 +1429,14 @@ const warningModal = document.getElementById('warning-modal');
 document.getElementById('btn-warn-cancel').addEventListener('click', () => {
   warningModal.classList.remove('show');
   pendingCopyAction = null;
+  clearErrorHighlights();
 });
 
 document.getElementById('btn-warn-confirm').addEventListener('click', () => {
   warningModal.classList.remove('show');
   if (pendingCopyAction) pendingCopyAction();
   pendingCopyAction = null;
+  clearErrorHighlights();
 });
 
 // Intercept clicks on the copy buttons
@@ -1410,9 +1446,37 @@ function handleCopyClick(targetId, btnId) {
   if(!targetEl || !btnEl) return;
   
   const action = () => executeCopy(targetEl, btnEl);
+  const missingFields = getEmptyFields();
   
-  if (hasEmptyFields()) {
+  if (missingFields.length > 0) {
     pendingCopyAction = action;
+    
+    // 1. Move the modal to perfectly cover ONLY the output window pane
+    const outContainer = document.getElementById('out-text').parentElement;
+    if (warningModal.parentElement !== outContainer) {
+      outContainer.style.position = 'relative';
+      outContainer.appendChild(warningModal);
+    }
+
+    // 2. Populate the bulleted list in the popup
+    const listEl = document.getElementById('missing-fields-list');
+    if (listEl) listEl.innerHTML = missingFields.map(f => `<li>${f.label}</li>`).join('');
+
+    // 3. Highlight the missing fields in the right sidebar in red
+    clearErrorHighlights();
+    missingFields.forEach(f => {
+      // Find the label in the sidebar that matches the missing field's name
+      const labels = Array.from(document.querySelectorAll('#fields-container label'));
+      const label = labels.find(l => l.textContent.toLowerCase().trim() === f.label.toLowerCase().trim());
+      
+      if (label) {
+        label.classList.add('field-label-error');
+        // The input wrapper is typically the next sibling
+        const input = label.nextElementSibling;
+        if (input) input.classList.add('field-error-pulse');
+      }
+    });
+
     warningModal.classList.add('show');
   } else {
     action(); // Copy immediately if everything is filled out
@@ -1429,6 +1493,7 @@ if(btnCopySubj) {
     handleCopyClick('val-subj', 'btn-copy-subj');
   });
 }
+
 document.getElementById('btn-clear').addEventListener('click',()=>{
   if(!curTmpl) return; fieldValues={};
   if(curTmpl.onLoad) curTmpl.onLoad(fieldValues);
