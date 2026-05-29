@@ -235,10 +235,6 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
     <button class="tree-act-btn" id="btn-new-tmpl">＋ New template</button>
     <button class="tree-act-btn" id="btn-new-folder">＋ Folder</button>
   </div>
-  <div id="drafts-sec">
-    <div id="drafts-label">Saved drafts</div>
-    <div id="draft-list"></div>
-  </div>
   <div id="sb-foot">
     <div id="sb-foot-label">Data</div>
     <button class="foot-btn" id="btn-export">💾 Export save file</button>
@@ -475,7 +471,7 @@ document.getElementById('import-file').addEventListener('change',e=>{
       if(d.userFolders) saveUserFolders(d.userFolders);
       if(d.drafts) saveDrafts(d.drafts);
       if(d.profile){saveProfileData(d.profile);loadProfileUI();}
-      renderAllListEntries(); renderDrafts(); renderTree();
+      renderAllListEntries(); renderTree();
       showToast('Save file imported.');
     }catch{showToast('Error: could not read save file.');}
     e.target.value='';
@@ -901,66 +897,73 @@ function getFiltered(){
   return all.filter(t=>t.name.toLowerCase().includes(q)||t.folder.toLowerCase().includes(q));
 }
 
-function renderTree(){
+function renderTree() {
   const treeEl=document.getElementById('tree'); treeEl.innerHTML='';
-  const filtered=getFiltered();
-  if(!filtered.length){treeEl.innerHTML=`<div class="no-results">No templates found.</div>`;return;}
+  const allTpls = getAllTemplates();
+  const allDrafts = getDrafts();
+  
+  // Search filters both templates and drafts now!
+  const q = searchQuery.toLowerCase();
+  const filteredTpls = q ? allTpls.filter(t => t.name.toLowerCase().includes(q) || t.folder.toLowerCase().includes(q)) : allTpls;
+  const filteredDrafts = q ? allDrafts.filter(d => d.name.toLowerCase().includes(q) || (d.folder||'Unsorted').toLowerCase().includes(q)) : allDrafts;
 
-  // Group by folder, preserving order: built-in folders first, then user folders
-  const folderOrder=[...BUILTIN_FOLDERS,...getUserFolders().filter(f=>!BUILTIN_FOLDERS.has(f))];
-  const groups={};
-  filtered.forEach(t=>{if(!groups[t.folder])groups[t.folder]=[];groups[t.folder].push(t);});
-  getUserFolders().forEach(f=>{if(!groups[f])groups[f]=[];});
+  if(!filteredTpls.length && !filteredDrafts.length){treeEl.innerHTML=`<div class="no-results">No templates or drafts found.</div>`;return;}
 
-  const orderedFolders=[...folderOrder,...Object.keys(groups).filter(f=>!folderOrder.includes(f))];
+  // Group everything together
+  const groups = {};
+  filteredTpls.forEach(t=>{if(!groups[t.folder])groups[t.folder]={tpls:[], drafts:[]}; groups[t.folder].tpls.push(t);});
+  filteredDrafts.forEach(d=>{
+    const f = d.folder || 'Unsorted';
+    if(!groups[f]) groups[f] = {tpls:[], drafts:[]};
+    groups[f].drafts.push(d);
+  });
+  getUserFolders().forEach(f=>{if(!groups[f])groups[f]={tpls:[], drafts:[]};});
 
-  orderedFolders.forEach(folder=>{
-    const templates=groups[folder]; if(templates===undefined) return;
-    const isUserFolder=!BUILTIN_FOLDERS.has(folder);
-    const isCollapsed=folderState[folder]&&!searchQuery;
-    const block=document.createElement('div'); block.className='folder-block'+(isCollapsed?' collapsed':'');
+  const folderOrder = [...BUILTIN_FOLDERS, ...getUserFolders().filter(f=>!BUILTIN_FOLDERS.has(f))];
+  const orderedFolders = [...folderOrder, ...Object.keys(groups).filter(f=>!folderOrder.includes(f) && f !== 'Unsorted')];
+  if (groups['Unsorted']) orderedFolders.push('Unsorted');
 
-    const hdr=document.createElement('div'); hdr.className='folder-hdr';
-    const arrow=document.createElement('span'); arrow.className='folder-arrow'; arrow.textContent='▼';
-    const lbl=document.createElement('span'); lbl.textContent=folder; lbl.style.flex='1';
+  orderedFolders.forEach(folder => {
+    const contents = groups[folder]; if(!contents) return;
+    const isUserFolder = !BUILTIN_FOLDERS.has(folder) && folder !== 'Unsorted';
+    const isCollapsed = folderState[folder] && !searchQuery;
+    
+    const block = document.createElement('div'); block.className = 'folder-block' + (isCollapsed ? ' collapsed' : '');
+    const hdr = document.createElement('div'); hdr.className = 'folder-hdr';
+    const arrow = document.createElement('span'); arrow.className = 'folder-arrow'; arrow.textContent = '▼';
+    const lbl = document.createElement('span'); lbl.textContent = folder; lbl.style.flex = '1';
     hdr.appendChild(arrow); hdr.appendChild(lbl);
 
-    // Allow dropping templates AND drafts directly onto a folder header
-    hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
-    hdr.addEventListener('dragleave', () => hdr.style.background = '');
-    hdr.addEventListener('drop', e => {
+    const handleDropToFolder = (e, targetFolder) => {
       e.preventDefault(); hdr.style.background = '';
-      
-      // 1. Check if the user dropped a Template
-      const draggedId = e.dataTransfer.getData('text/plain');
-      if (draggedId) {
+      const tId = e.dataTransfer.getData('text/plain');
+      const dIdStr = e.dataTransfer.getData('draft-id');
+      if (tId) {
         const userTpls = getUserTemplates();
-        const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
-        if (draggedIdx !== -1) {
-          const [draggedItem] = userTpls.splice(draggedIdx, 1);
-          draggedItem.folder = folder; 
-          userTpls.push(draggedItem);
+        const idx = userTpls.findIndex(u => u.id === tId);
+        if (idx !== -1) {
+          const [item] = userTpls.splice(idx, 1);
+          item.folder = targetFolder;
+          userTpls.push(item);
           saveUserTemplates(userTpls);
           renderTree();
-          return; // Stop here if it was a template
+        }
+      } else if (dIdStr) {
+        const drafts = getDrafts();
+        const idx = drafts.findIndex(d => d.id === parseInt(dIdStr, 10));
+        if (idx !== -1) {
+          const [item] = drafts.splice(idx, 1);
+          item.folder = targetFolder;
+          drafts.push(item);
+          saveDrafts(drafts);
+          renderTree();
         }
       }
+    };
 
-      // 2. Check if the user dropped a Draft
-      const draftIdStr = e.dataTransfer.getData('draft-id');
-      if (draftIdStr) {
-        const draggedDraftId = parseInt(draftIdStr, 10);
-        const currentDrafts = getDrafts();
-        const draggedIdx = currentDrafts.findIndex(d => d.id === draggedDraftId);
-        if (draggedIdx !== -1) {
-          const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
-          draggedItem.folder = folder; // Assign draft to this folder name
-          currentDrafts.unshift(draggedItem); 
-          saveDrafts(currentDrafts);
-          renderDrafts(); // Update the drafts UI to show the new folder!
-        }
-      }
-    });
+    hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
+    hdr.addEventListener('dragleave', () => hdr.style.background = '');
+    hdr.addEventListener('drop', e => handleDropToFolder(e, folder));
 
     if(isUserFolder){
       const ctrl=document.createElement('div'); ctrl.className='fh-ctrl';
@@ -969,99 +972,179 @@ function renderTree(){
         e.stopPropagation();
         const newName=prompt('Rename folder:',folder); if(!newName?.trim()||newName.trim()===folder) return;
         const n=newName.trim();
-        if(BUILTIN_FOLDERS.has(n)){showToast('That name is reserved.');return;}
+        if(BUILTIN_FOLDERS.has(n) || n==='Unsorted'){showToast('That name is reserved.');return;}
         const templates2=getUserTemplates().map(t=>t.folder===folder?{...t,folder:n}:t); saveUserTemplates(templates2);
+        const drafts2=getDrafts().map(d=>d.folder===folder?{...d,folder:n}:d); saveDrafts(drafts2);
         const folders=getUserFolders().map(f2=>f2===folder?n:f2); saveUserFolders(folders);
         renderTree();
       });
       const del=document.createElement('button'); del.className='fh-btn del'; del.title='Delete folder'; del.textContent='×';
       del.addEventListener('click',e=>{
         e.stopPropagation();
-        const hasTemplates=getUserTemplates().some(t=>t.folder===folder);
-        if(hasTemplates){showToast('Move or delete all templates in this folder first.');return;}
+        if(getUserTemplates().some(t=>t.folder===folder) || getDrafts().some(d=>d.folder===folder)){showToast('Move or delete all items in this folder first.');return;}
         if(!confirm(`Delete folder "${folder}"?`)) return;
         saveUserFolders(getUserFolders().filter(f2=>f2!==folder)); renderTree();
       });
       ctrl.appendChild(ren); ctrl.appendChild(del); hdr.appendChild(ctrl);
     }
 
-    hdr.addEventListener('click',()=>{folderState[folder]=!folderState[folder];renderTree();});
+    hdr.addEventListener('click', () => { folderState[folder] = !folderState[folder]; renderTree(); });
+    
+    const kids = document.createElement('div'); kids.className = 'folder-kids';
+    kids.style.minHeight = '14px'; // Ensures empty folders are still big enough to catch drops!
+    
+    kids.addEventListener('dragover', e => { e.preventDefault(); kids.style.background = 'rgba(200,240,74,.05)'; });
+    kids.addEventListener('dragleave', () => kids.style.background = '');
+    kids.addEventListener('drop', e => { kids.style.background = ''; handleDropToFolder(e, folder); });
 
-    const kids=document.createElement('div'); kids.className='folder-kids';
-    templates.forEach(t=>{
-      const item=document.createElement('div');
-      item.className='ti'+(curTmpl?.id===t.id?' active':'');
-      const dot=document.createElement('span'); dot.className='dot';
-      const name=document.createElement('span'); name.className='ti-name'; name.textContent=t.name;
+    // 1. RENDER TEMPLATES
+    contents.tpls.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'ti' + (curTmpl?.id === t.id && !fieldValues._isDraft ? ' active' : '');
+      const dot = document.createElement('span'); dot.className = 'dot';
+      const name = document.createElement('span'); name.className = 'ti-name'; name.textContent = t.name;
       item.appendChild(dot); item.appendChild(name);
 
-      // --- NEW: HTML5 Native Drag & Drop Behavior ---
       if (t.isUserTemplate) {
         item.draggable = true;
-        item.addEventListener('dragstart', e => {
-          e.dataTransfer.setData('text/plain', t.id);
-          setTimeout(() => item.classList.add('dragging'), 0);
-        });
+        item.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', t.id); setTimeout(() => item.classList.add('dragging'), 0); });
         item.addEventListener('dragend', () => item.classList.remove('dragging'));
       }
 
-      item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
-      item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-      
+      item.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); item.classList.add('drag-over'); });
+      item.addEventListener('dragleave', e => { e.stopPropagation(); item.classList.remove('drag-over'); });
       item.addEventListener('drop', e => {
-        e.preventDefault(); item.classList.remove('drag-over');
-        const draggedId = e.dataTransfer.getData('text/plain');
-        if (!draggedId || draggedId === t.id) return;
-        
-        const userTpls = getUserTemplates();
-        const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
-        if (draggedIdx === -1) return; // Ignore if it's a built-in template
-        
-        const [draggedItem] = userTpls.splice(draggedIdx, 1);
-        draggedItem.folder = t.folder; // Adopt the drop target's folder
-        
-        if (t.isUserTemplate) {
-          // If dropping on a custom template, snap it directly above that template
-          const targetIdx = userTpls.findIndex(u => u.id === t.id);
-          userTpls.splice(targetIdx !== -1 ? targetIdx : 0, 0, draggedItem);
-        } else {
-          // If dropping on a built-in template, just add it to that folder
-          userTpls.push(draggedItem);
+        e.preventDefault(); e.stopPropagation(); item.classList.remove('drag-over');
+        const tId = e.dataTransfer.getData('text/plain');
+        const dIdStr = e.dataTransfer.getData('draft-id');
+        if (tId && tId !== t.id) {
+          const userTpls = getUserTemplates();
+          const idx = userTpls.findIndex(u => u.id === tId);
+          if (idx !== -1) {
+            const [dragged] = userTpls.splice(idx, 1);
+            dragged.folder = t.folder;
+            const targetIdx = userTpls.findIndex(u => u.id === t.id);
+            userTpls.splice(targetIdx !== -1 ? targetIdx : 0, 0, dragged);
+            saveUserTemplates(userTpls);
+          }
+        } else if (dIdStr) {
+          const drafts = getDrafts();
+          const idx = drafts.findIndex(d => d.id === parseInt(dIdStr, 10));
+          if (idx !== -1) {
+            const [dragged] = drafts.splice(idx, 1);
+            dragged.folder = t.folder;
+            drafts.push(dragged); 
+            saveDrafts(drafts);
+          }
         }
-        
-        saveUserTemplates(userTpls);
         renderTree();
       });
-      // ----------------------------------------------
 
+      const ctrl = document.createElement('div'); ctrl.className = 'ti-ctrl';
       if(t.isUserTemplate){
-        const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
-        const editBtn=document.createElement('button'); editBtn.className='ti-btn'; editBtn.title='Edit'; editBtn.textContent='✏';
-        editBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
-        const delBtn=document.createElement('button'); delBtn.className='ti-btn del'; delBtn.title='Delete'; delBtn.textContent='×';
-        delBtn.addEventListener('click',e=>{
+        const editBtn = document.createElement('button'); editBtn.className = 'ti-btn'; editBtn.title = 'Edit'; editBtn.textContent = '✏';
+        editBtn.addEventListener('click', e => { e.stopPropagation(); openBuilder(t); });
+        const delBtn = document.createElement('button'); delBtn.className = 'ti-btn del'; delBtn.title = 'Delete'; delBtn.textContent = '×';
+        delBtn.addEventListener('click', e => {
           e.stopPropagation();
-          if(!confirm(`Delete "${t.name}"?`)) return;
-          saveUserTemplates(getUserTemplates().filter(u=>u.id!==t.id));
-          if(curTmpl?.id===t.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
+          if(!confirm(`Delete template "${t.name}"?`)) return;
+          saveUserTemplates(getUserTemplates().filter(u => u.id !== t.id));
+          if(curTmpl?.id === t.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
           renderTree();
         });
-        ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
+        ctrl.appendChild(editBtn); ctrl.appendChild(delBtn);
       } else {
-        const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
-        const dupeBtn=document.createElement('button'); dupeBtn.className='ti-btn'; dupeBtn.title='Duplicate'; dupeBtn.textContent='⎘';
-        dupeBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
-        ctrl.appendChild(dupeBtn); item.appendChild(ctrl);
+        const dupeBtn = document.createElement('button'); dupeBtn.className = 'ti-btn'; dupeBtn.title = 'Duplicate'; dupeBtn.textContent = '⎘';
+        dupeBtn.addEventListener('click', e => { e.stopPropagation(); openBuilder(t); });
+        ctrl.appendChild(dupeBtn);
       }
+      item.appendChild(ctrl);
 
       item.addEventListener('click', () => {
         closePanel();
         const carryOverValues = { ...fieldValues };
         delete carryOverValues['their_case_id']; 
-        delete carryOverValues['timestamp'];     
+        delete carryOverValues['timestamp'];
+        delete carryOverValues['_isDraft'];
         loadTemplate(t, carryOverValues);
       });
-      
+      kids.appendChild(item);
+    });
+
+    // 2. RENDER DRAFTS
+    contents.drafts.forEach(d => {
+      const item = document.createElement('div');
+      item.className = 'ti' + (fieldValues._isDraft === d.id ? ' active' : '');
+      const dot = document.createElement('span'); dot.className = 'dot'; dot.textContent = '📝'; dot.style.background = 'transparent'; dot.style.fontSize='10px';
+      const name = document.createElement('span'); name.className = 'ti-name'; name.textContent = d.name; name.style.color = 'var(--ad)';
+      item.appendChild(dot); item.appendChild(name);
+
+      item.draggable = true;
+      item.addEventListener('dragstart', e => { e.dataTransfer.setData('draft-id', d.id); setTimeout(() => item.classList.add('dragging'), 0); });
+      item.addEventListener('dragend', () => item.classList.remove('dragging'));
+
+      item.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); item.classList.add('drag-over'); });
+      item.addEventListener('dragleave', e => { e.stopPropagation(); item.classList.remove('drag-over'); });
+      item.addEventListener('drop', e => {
+        e.preventDefault(); e.stopPropagation(); item.classList.remove('drag-over');
+        const dIdStr = e.dataTransfer.getData('draft-id');
+        const tIdStr = e.dataTransfer.getData('text/plain');
+
+        if (dIdStr && parseInt(dIdStr,10) !== d.id) {
+          const drafts = getDrafts();
+          const idx = drafts.findIndex(x => x.id === parseInt(dIdStr, 10));
+          if (idx !== -1) {
+            const [dragged] = drafts.splice(idx, 1);
+            dragged.folder = d.folder;
+            const targetIdx = drafts.findIndex(x => x.id === d.id);
+            drafts.splice(targetIdx !== -1 ? targetIdx : 0, 0, dragged);
+            saveDrafts(drafts);
+          }
+        } else if (tIdStr) {
+           const userTpls = getUserTemplates();
+           const idx = userTpls.findIndex(u => u.id === tIdStr);
+           if (idx !== -1) {
+             const [dragged] = userTpls.splice(idx, 1);
+             dragged.folder = d.folder;
+             userTpls.push(dragged);
+             saveUserTemplates(userTpls);
+           }
+        }
+        renderTree();
+      });
+
+      const ctrl = document.createElement('div'); ctrl.className = 'ti-ctrl';
+      const renBtn = document.createElement('button'); renBtn.className = 'ti-btn'; renBtn.title = 'Rename Draft'; renBtn.textContent = '✏';
+      renBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const newName = prompt('Rename draft:', d.name);
+        if (newName && newName.trim() && newName.trim() !== d.name) {
+          const drafts = getDrafts();
+          const target = drafts.find(x => x.id === d.id);
+          if (target) { target.name = newName.trim(); saveDrafts(drafts); renderTree(); }
+        }
+      });
+      const delBtn = document.createElement('button'); delBtn.className = 'ti-btn del'; delBtn.title = 'Delete Draft'; delBtn.textContent = '×';
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if(!confirm(`Delete draft "${d.name}"?`)) return;
+        saveDrafts(getDrafts().filter(x => x.id !== d.id));
+        if(fieldValues._isDraft === d.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
+        renderTree();
+      });
+      ctrl.appendChild(renBtn); ctrl.appendChild(delBtn);
+      item.appendChild(ctrl);
+
+      item.addEventListener('click', () => {
+        const t = getAllTemplates().find(tmpl => tmpl.id === d.templateId);
+        if (t) {
+          closePanel(); 
+          d.values._isDraft = d.id; // Flag it so the tree highlights the draft
+          loadTemplate(t, d.values); 
+        } else {
+          showToast('Template no longer exists.');
+        }
+      });
       kids.appendChild(item);
     });
 
@@ -1298,7 +1381,7 @@ function executeCopy(targetEl, btnEl) {
         if (drafts.length > 50) drafts.pop();
         
         saveDrafts(drafts);
-        renderDrafts();
+        renderTree();
       }
     }
   });
@@ -1361,169 +1444,15 @@ document.getElementById('btn-save-draft').addEventListener('click',()=>{
   if(!curTmpl) return;
   const name=prompt('Name this draft:',curTmpl.name); if(!name) return;
   const drafts=getDrafts(); drafts.unshift({id:Date.now(),name,templateId:curTmpl.id,values:fieldValues});
-  saveDrafts(drafts); renderDrafts(); showToast(`Draft "${name}" saved.`);
+  saveDrafts(drafts); 
+  renderTree(); // <-- Unified tree render
+  showToast(`Draft "${name}" saved.`);
 });
-
-let draftFolderState = {}; // Remembers which draft folders are collapsed
-
-function renderDrafts() {
-  const drafts = getDrafts(); 
-  const dl = document.getElementById('draft-list'); 
-  dl.innerHTML = '';
-  
-  if (!drafts.length) {
-    const el = document.createElement('div');
-    el.style.cssText = 'font-size:12px;color:var(--tf);padding:4px 8px 8px;';
-    el.textContent = 'No drafts yet.';
-    dl.appendChild(el);
-    return;
-  }
-
-  // Group drafts by their assigned folder (default to "Unsorted")
-  const groups = {};
-  drafts.forEach(d => {
-    const f = d.folder || 'Unsorted';
-    if (!groups[f]) groups[f] = [];
-    groups[f].push(d);
-  });
-
-  // Sort folders alphabetically, but force "Unsorted" to the bottom
-  const folders = Object.keys(groups).sort((a, b) => a === 'Unsorted' ? 1 : b === 'Unsorted' ? -1 : a.localeCompare(b));
-
-  folders.forEach(folder => {
-    const isCollapsed = draftFolderState[folder];
-    const block = document.createElement('div');
-    block.className = 'folder-block' + (isCollapsed ? ' collapsed' : '');
-
-    // Render the Folder Header
-    const hdr = document.createElement('div');
-    hdr.className = 'folder-hdr';
-    
-    const arrow = document.createElement('span');
-    arrow.className = 'folder-arrow';
-    arrow.textContent = '▼';
-    
-    const lbl = document.createElement('span');
-    lbl.textContent = folder;
-    lbl.style.flex = '1';
-    
-    hdr.appendChild(arrow); hdr.appendChild(lbl);
-
-    // Allow dropping a draft directly onto the folder header to move it
-    hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
-    hdr.addEventListener('dragleave', () => hdr.style.background = '');
-    hdr.addEventListener('drop', e => {
-      e.preventDefault(); hdr.style.background = '';
-      const draggedId = parseInt(e.dataTransfer.getData('draft-id'), 10);
-      if (!draggedId) return;
-      
-      const currentDrafts = getDrafts();
-      const draggedIdx = currentDrafts.findIndex(d => d.id === draggedId);
-      if (draggedIdx === -1) return;
-      
-      const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
-      draggedItem.folder = folder; // Assign to this folder
-      currentDrafts.unshift(draggedItem); // Move it to the top of the list
-      saveDrafts(currentDrafts); renderDrafts();
-    });
-
-    hdr.addEventListener('click', () => { draftFolderState[folder] = !draftFolderState[folder]; renderDrafts(); });
-    block.appendChild(hdr);
-
-    // Render the Drafts inside the folder
-    const kids = document.createElement('div');
-    kids.className = 'folder-kids';
-
-    groups[folder].forEach(draft => {
-      const row = document.createElement('div'); row.className = 'draft-item';
-      
-      const name = document.createElement('span'); name.textContent = draft.name;
-      name.style.flex = '1';
-
-      // Drag & Drop Functionality
-      row.draggable = true;
-      row.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('draft-id', draft.id);
-        setTimeout(() => row.classList.add('dragging'), 0);
-      });
-      row.addEventListener('dragend', () => row.classList.remove('dragging'));
-      row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
-      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-      row.addEventListener('drop', e => {
-        e.preventDefault(); row.classList.remove('drag-over');
-        const draggedId = parseInt(e.dataTransfer.getData('draft-id'), 10);
-        if (!draggedId || draggedId === draft.id) return;
-        
-        const currentDrafts = getDrafts();
-        const draggedIdx = currentDrafts.findIndex(d => d.id === draggedId);
-        if (draggedIdx === -1) return;
-        
-        const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
-        draggedItem.folder = draft.folder || 'Unsorted'; // Adopt the target's folder!
-        
-        const targetIdx = currentDrafts.findIndex(d => d.id === draft.id);
-        currentDrafts.splice(targetIdx !== -1 ? targetIdx : 0, 0, draggedItem);
-        
-        saveDrafts(currentDrafts); renderDrafts();
-      });
-
-      // Control Buttons (Move, Rename, Delete)
-      const ctrl = document.createElement('div'); ctrl.className = 'draft-ctrl';
-      
-      const moveBtn = document.createElement('button'); moveBtn.className = 'draft-btn'; moveBtn.innerHTML = '📁';
-      moveBtn.title = 'Move to folder';
-      moveBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        const newFolder = prompt('Move draft to folder (type an existing or new folder name):', draft.folder || 'Unsorted');
-        if (newFolder && newFolder.trim() && newFolder.trim() !== (draft.folder || 'Unsorted')) {
-          const allDrafts = getDrafts();
-          const d = allDrafts.find(x => x.id === draft.id);
-          if (d) { d.folder = newFolder.trim(); saveDrafts(allDrafts); renderDrafts(); }
-        }
-      });
-
-      const ren = document.createElement('button'); ren.className = 'draft-btn'; ren.innerHTML = '✏';
-      ren.title = 'Rename draft';
-      ren.addEventListener('click', e => {
-        e.stopPropagation();
-        const newName = prompt('Rename draft:', draft.name);
-        if (newName && newName.trim() && newName.trim() !== draft.name) {
-          const allDrafts = getDrafts();
-          const d = allDrafts.find(x => x.id === draft.id);
-          if (d) { d.name = newName.trim(); saveDrafts(allDrafts); renderDrafts(); }
-        }
-      });
-
-      const del = document.createElement('button'); del.className = 'draft-btn del'; del.innerHTML = '×';
-      del.title = 'Delete draft';
-      del.addEventListener('click', e => {
-        e.stopPropagation();
-        saveDrafts(getDrafts().filter(d => d.id !== draft.id)); renderDrafts();
-      });
-
-      ctrl.appendChild(moveBtn); ctrl.appendChild(ren); ctrl.appendChild(del);
-      row.appendChild(name); row.appendChild(ctrl);
-
-      // Load Draft on click
-      row.addEventListener('click', () => {
-        const t = getAllTemplates().find(t => t.id === draft.templateId);
-        if (t) { closePanel(); loadTemplate(t, draft.values); } 
-        else showToast('Template no longer exists.');
-      });
-      
-      kids.appendChild(row);
-    });
-    
-    block.appendChild(kids);
-    dl.appendChild(block);
-  });
-}
 
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
-renderTree();
-renderDrafts();
+renderTree(); // <-- One render call handles everything now!
 loadProfileUI();
 </script>
 </body>
