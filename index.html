@@ -925,22 +925,41 @@ function renderTree(){
     const lbl=document.createElement('span'); lbl.textContent=folder; lbl.style.flex='1';
     hdr.appendChild(arrow); hdr.appendChild(lbl);
 
-    // Allow dropping templates directly onto a folder header
+    // Allow dropping templates AND drafts directly onto a folder header
     hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
     hdr.addEventListener('dragleave', () => hdr.style.background = '');
     hdr.addEventListener('drop', e => {
       e.preventDefault(); hdr.style.background = '';
-      const draggedId = e.dataTransfer.getData('text/plain');
-      if (!draggedId) return;
-      const userTpls = getUserTemplates();
-      const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
-      if (draggedIdx === -1) return;
       
-      const [draggedItem] = userTpls.splice(draggedIdx, 1);
-      draggedItem.folder = folder; 
-      userTpls.push(draggedItem); // Move to the end of the new folder
-      saveUserTemplates(userTpls);
-      renderTree();
+      // 1. Check if the user dropped a Template
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (draggedId) {
+        const userTpls = getUserTemplates();
+        const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
+        if (draggedIdx !== -1) {
+          const [draggedItem] = userTpls.splice(draggedIdx, 1);
+          draggedItem.folder = folder; 
+          userTpls.push(draggedItem);
+          saveUserTemplates(userTpls);
+          renderTree();
+          return; // Stop here if it was a template
+        }
+      }
+
+      // 2. Check if the user dropped a Draft
+      const draftIdStr = e.dataTransfer.getData('draft-id');
+      if (draftIdStr) {
+        const draggedDraftId = parseInt(draftIdStr, 10);
+        const currentDrafts = getDrafts();
+        const draggedIdx = currentDrafts.findIndex(d => d.id === draggedDraftId);
+        if (draggedIdx !== -1) {
+          const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
+          draggedItem.folder = folder; // Assign draft to this folder name
+          currentDrafts.unshift(draggedItem); 
+          saveDrafts(currentDrafts);
+          renderDrafts(); // Update the drafts UI to show the new folder!
+        }
+      }
     });
 
     if(isUserFolder){
