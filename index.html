@@ -954,8 +954,57 @@ function renderTree(){
 
       if(t.isUserTemplate){
         const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
+        
+        // Move Up Button
+        const upBtn=document.createElement('button'); upBtn.className='ti-btn'; upBtn.title='Move Up'; upBtn.textContent='↑';
+        upBtn.addEventListener('click',e=>{
+          e.stopPropagation();
+          const templates = getUserTemplates();
+          const idx = templates.findIndex(u => u.id === t.id);
+          let prevIdx = -1;
+          for(let i = idx - 1; i >= 0; i--) { if(templates[i].folder === t.folder) { prevIdx = i; break; } }
+          if(prevIdx !== -1) {
+            [templates[prevIdx], templates[idx]] = [templates[idx], templates[prevIdx]];
+            saveUserTemplates(templates); renderTree();
+          }
+        });
+
+        // Move Down Button
+        const downBtn=document.createElement('button'); downBtn.className='ti-btn'; downBtn.title='Move Down'; downBtn.textContent='↓';
+        downBtn.addEventListener('click',e=>{
+          e.stopPropagation();
+          const templates = getUserTemplates();
+          const idx = templates.findIndex(u => u.id === t.id);
+          let nextIdx = -1;
+          for(let i = idx + 1; i < templates.length; i++) { if(templates[i].folder === t.folder) { nextIdx = i; break; } }
+          if(nextIdx !== -1) {
+            [templates[idx], templates[nextIdx]] = [templates[nextIdx], templates[idx]];
+            saveUserTemplates(templates); renderTree();
+          }
+        });
+
+        // Move to Folder Button
+        const moveBtn=document.createElement('button'); moveBtn.className='ti-btn'; moveBtn.title='Move to Folder'; moveBtn.textContent='📁';
+        moveBtn.addEventListener('click',e=>{
+          e.stopPropagation();
+          const newFolder=prompt('Move to folder (type an existing or new folder name):', t.folder);
+          if(!newFolder?.trim() || newFolder.trim() === t.folder) return;
+          const n = newFolder.trim();
+          const templates = getUserTemplates();
+          const tIdx = templates.findIndex(u => u.id === t.id);
+          if(tIdx !== -1) {
+             templates[tIdx].folder = n;
+             saveUserTemplates(templates);
+             const folders = getUserFolders();
+             // If it's a completely new folder, save it to the folder list too
+             if(!folders.includes(n)) { folders.push(n); saveUserFolders(folders); }
+             renderTree();
+          }
+        });
+
         const editBtn=document.createElement('button'); editBtn.className='ti-btn'; editBtn.title='Edit'; editBtn.textContent='✏';
         editBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
+        
         const delBtn=document.createElement('button'); delBtn.className='ti-btn del'; delBtn.title='Delete'; delBtn.textContent='×';
         delBtn.addEventListener('click',e=>{
           e.stopPropagation();
@@ -964,7 +1013,8 @@ function renderTree(){
           if(curTmpl?.id===t.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
           renderTree();
         });
-        ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
+        
+        ctrl.appendChild(upBtn); ctrl.appendChild(downBtn); ctrl.appendChild(moveBtn); ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
       } else {
         const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
         const dupeBtn=document.createElement('button'); dupeBtn.className='ti-btn'; dupeBtn.title='Duplicate'; dupeBtn.textContent='⎘';
