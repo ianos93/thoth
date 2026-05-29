@@ -59,10 +59,15 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 #drafts-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);padding:4px 8px 6px;}
 .draft-item{padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--tm);display:flex;align-items:center;justify-content:space-between;gap:4px;}
 .draft-item:hover{background:var(--sr);color:var(--t);}
+.draft-item.dragging{opacity:0.4;}
+.draft-item.drag-over{box-shadow:inset 0 2px 0 var(--ac);background:var(--sr);}
 .draft-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.draft-del{background:none;border:none;cursor:pointer;color:var(--tf);font-size:15px;padding:0 2px;line-height:1;flex-shrink:0;opacity:0;}
-.draft-item:hover .draft-del{opacity:1;}
-.draft-del:hover{color:#f87171;}
+.draft-ctrl{display:flex;gap:4px;opacity:0;}
+.draft-item:hover .draft-ctrl{opacity:1;}
+.draft-btn{background:none;border:none;cursor:pointer;color:var(--tf);font-size:13px;padding:0 2px;line-height:1;flex-shrink:0;}
+.draft-btn:hover{color:var(--t);}
+.draft-btn.del{font-size:15px;}
+.draft-btn.del:hover{color:#f87171;}
 #sb-foot{border-top:1px solid var(--b);padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
 #sb-foot-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tf);padding:0 2px 2px;}
 .foot-btn{font-family:inherit;font-size:12px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--bs);background:transparent;color:var(--tm);cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;}
@@ -1340,20 +1345,158 @@ document.getElementById('btn-save-draft').addEventListener('click',()=>{
   saveDrafts(drafts); renderDrafts(); showToast(`Draft "${name}" saved.`);
 });
 
-function renderDrafts(){
-  const drafts=getDrafts(); const dl=document.getElementById('draft-list'); dl.innerHTML='';
-  if(!drafts.length){const el=document.createElement('div');el.style.cssText='font-size:12px;color:var(--tf);padding:4px 8px 8px;';el.textContent='No drafts yet.';dl.appendChild(el);return;}
-  drafts.forEach(draft=>{
-    const row=document.createElement('div'); row.className='draft-item';
-    const name=document.createElement('span'); name.textContent=draft.name;
-    const del=document.createElement('button'); del.className='draft-del'; del.innerHTML='×';
-    del.addEventListener('click',e=>{e.stopPropagation();saveDrafts(getDrafts().filter(d=>d.id!==draft.id));renderDrafts();});
-    row.appendChild(name);row.appendChild(del);
-    row.addEventListener('click',()=>{
-      const t=getAllTemplates().find(t=>t.id===draft.templateId);
-      if(t){closePanel();loadTemplate(t,draft.values);}else showToast('Template no longer exists.');
+let draftFolderState = {}; // Remembers which draft folders are collapsed
+
+function renderDrafts() {
+  const drafts = getDrafts(); 
+  const dl = document.getElementById('draft-list'); 
+  dl.innerHTML = '';
+  
+  if (!drafts.length) {
+    const el = document.createElement('div');
+    el.style.cssText = 'font-size:12px;color:var(--tf);padding:4px 8px 8px;';
+    el.textContent = 'No drafts yet.';
+    dl.appendChild(el);
+    return;
+  }
+
+  // Group drafts by their assigned folder (default to "Unsorted")
+  const groups = {};
+  drafts.forEach(d => {
+    const f = d.folder || 'Unsorted';
+    if (!groups[f]) groups[f] = [];
+    groups[f].push(d);
+  });
+
+  // Sort folders alphabetically, but force "Unsorted" to the bottom
+  const folders = Object.keys(groups).sort((a, b) => a === 'Unsorted' ? 1 : b === 'Unsorted' ? -1 : a.localeCompare(b));
+
+  folders.forEach(folder => {
+    const isCollapsed = draftFolderState[folder];
+    const block = document.createElement('div');
+    block.className = 'folder-block' + (isCollapsed ? ' collapsed' : '');
+
+    // Render the Folder Header
+    const hdr = document.createElement('div');
+    hdr.className = 'folder-hdr';
+    
+    const arrow = document.createElement('span');
+    arrow.className = 'folder-arrow';
+    arrow.textContent = '▼';
+    
+    const lbl = document.createElement('span');
+    lbl.textContent = folder;
+    lbl.style.flex = '1';
+    
+    hdr.appendChild(arrow); hdr.appendChild(lbl);
+
+    // Allow dropping a draft directly onto the folder header to move it
+    hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
+    hdr.addEventListener('dragleave', () => hdr.style.background = '');
+    hdr.addEventListener('drop', e => {
+      e.preventDefault(); hdr.style.background = '';
+      const draggedId = parseInt(e.dataTransfer.getData('draft-id'), 10);
+      if (!draggedId) return;
+      
+      const currentDrafts = getDrafts();
+      const draggedIdx = currentDrafts.findIndex(d => d.id === draggedId);
+      if (draggedIdx === -1) return;
+      
+      const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
+      draggedItem.folder = folder; // Assign to this folder
+      currentDrafts.unshift(draggedItem); // Move it to the top of the list
+      saveDrafts(currentDrafts); renderDrafts();
     });
-    dl.appendChild(row);
+
+    hdr.addEventListener('click', () => { draftFolderState[folder] = !draftFolderState[folder]; renderDrafts(); });
+    block.appendChild(hdr);
+
+    // Render the Drafts inside the folder
+    const kids = document.createElement('div');
+    kids.className = 'folder-kids';
+
+    groups[folder].forEach(draft => {
+      const row = document.createElement('div'); row.className = 'draft-item';
+      
+      const name = document.createElement('span'); name.textContent = draft.name;
+      name.style.flex = '1';
+
+      // Drag & Drop Functionality
+      row.draggable = true;
+      row.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('draft-id', draft.id);
+        setTimeout(() => row.classList.add('dragging'), 0);
+      });
+      row.addEventListener('dragend', () => row.classList.remove('dragging'));
+      row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
+      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      row.addEventListener('drop', e => {
+        e.preventDefault(); row.classList.remove('drag-over');
+        const draggedId = parseInt(e.dataTransfer.getData('draft-id'), 10);
+        if (!draggedId || draggedId === draft.id) return;
+        
+        const currentDrafts = getDrafts();
+        const draggedIdx = currentDrafts.findIndex(d => d.id === draggedId);
+        if (draggedIdx === -1) return;
+        
+        const [draggedItem] = currentDrafts.splice(draggedIdx, 1);
+        draggedItem.folder = draft.folder || 'Unsorted'; // Adopt the target's folder!
+        
+        const targetIdx = currentDrafts.findIndex(d => d.id === draft.id);
+        currentDrafts.splice(targetIdx !== -1 ? targetIdx : 0, 0, draggedItem);
+        
+        saveDrafts(currentDrafts); renderDrafts();
+      });
+
+      // Control Buttons (Move, Rename, Delete)
+      const ctrl = document.createElement('div'); ctrl.className = 'draft-ctrl';
+      
+      const moveBtn = document.createElement('button'); moveBtn.className = 'draft-btn'; moveBtn.innerHTML = '📁';
+      moveBtn.title = 'Move to folder';
+      moveBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const newFolder = prompt('Move draft to folder (type an existing or new folder name):', draft.folder || 'Unsorted');
+        if (newFolder && newFolder.trim() && newFolder.trim() !== (draft.folder || 'Unsorted')) {
+          const allDrafts = getDrafts();
+          const d = allDrafts.find(x => x.id === draft.id);
+          if (d) { d.folder = newFolder.trim(); saveDrafts(allDrafts); renderDrafts(); }
+        }
+      });
+
+      const ren = document.createElement('button'); ren.className = 'draft-btn'; ren.innerHTML = '✏';
+      ren.title = 'Rename draft';
+      ren.addEventListener('click', e => {
+        e.stopPropagation();
+        const newName = prompt('Rename draft:', draft.name);
+        if (newName && newName.trim() && newName.trim() !== draft.name) {
+          const allDrafts = getDrafts();
+          const d = allDrafts.find(x => x.id === draft.id);
+          if (d) { d.name = newName.trim(); saveDrafts(allDrafts); renderDrafts(); }
+        }
+      });
+
+      const del = document.createElement('button'); del.className = 'draft-btn del'; del.innerHTML = '×';
+      del.title = 'Delete draft';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        saveDrafts(getDrafts().filter(d => d.id !== draft.id)); renderDrafts();
+      });
+
+      ctrl.appendChild(moveBtn); ctrl.appendChild(ren); ctrl.appendChild(del);
+      row.appendChild(name); row.appendChild(ctrl);
+
+      // Load Draft on click
+      row.addEventListener('click', () => {
+        const t = getAllTemplates().find(t => t.id === draft.templateId);
+        if (t) { closePanel(); loadTemplate(t, draft.values); } 
+        else showToast('Template no longer exists.');
+      });
+      
+      kids.appendChild(row);
+    });
+    
+    block.appendChild(kids);
+    dl.appendChild(block);
   });
 }
 
