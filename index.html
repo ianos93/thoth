@@ -1001,9 +1001,8 @@ function renderTree() {
     contents.tpls.forEach(t => {
       const item = document.createElement('div');
       item.className = 'ti' + (curTmpl?.id === t.id && !fieldValues._isDraft ? ' active' : '');
-      const dot = document.createElement('span'); dot.className = 'dot';
       const name = document.createElement('span'); name.className = 'ti-name'; name.textContent = t.name;
-      item.appendChild(dot); item.appendChild(name);
+      item.appendChild(name);
 
       if (t.isUserTemplate) {
         item.draggable = true;
@@ -1075,9 +1074,11 @@ function renderTree() {
     contents.drafts.forEach(d => {
       const item = document.createElement('div');
       item.className = 'ti' + (fieldValues._isDraft === d.id ? ' active' : '');
-      const dot = document.createElement('span'); dot.className = 'dot'; dot.textContent = '📝'; dot.style.background = 'transparent'; dot.style.fontSize='10px';
+      
+      const icon = document.createElement('span'); icon.textContent = '📝'; icon.style.marginRight = '6px'; icon.style.fontSize = '12px'; icon.style.flexShrink = '0';
       const name = document.createElement('span'); name.className = 'ti-name'; name.textContent = d.name; name.style.color = 'var(--ad)';
-      item.appendChild(dot); item.appendChild(name);
+      
+      item.appendChild(icon); item.appendChild(name);
 
       item.draggable = true;
       item.addEventListener('dragstart', e => { e.dataTransfer.setData('draft-id', d.id); setTimeout(() => item.classList.add('dragging'), 0); });
