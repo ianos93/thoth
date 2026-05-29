@@ -38,6 +38,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .fh-btn{background:none;border:none;color:var(--tf);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;line-height:1;}
 .fh-btn:hover{color:var(--t);background:var(--bs);}
 .fh-btn.del:hover{color:#f87171;}
+.ti.dragging { opacity: 0.4; }
+.ti.drag-over { box-shadow: inset 0 2px 0 var(--ac); background: var(--sr); }
 .ti{padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--tm);display:flex;align-items:center;gap:6px;user-select:none;overflow:hidden;}
 .ti:hover{background:var(--sr);color:var(--t);}
 .ti.active{background:var(--ab);color:var(--at);font-weight:500;}
@@ -903,7 +905,6 @@ function renderTree(){
   const folderOrder=[...BUILTIN_FOLDERS,...getUserFolders().filter(f=>!BUILTIN_FOLDERS.has(f))];
   const groups={};
   filtered.forEach(t=>{if(!groups[t.folder])groups[t.folder]=[];groups[t.folder].push(t);});
-  // Also show empty user folders
   getUserFolders().forEach(f=>{if(!groups[f])groups[f]=[];});
 
   const orderedFolders=[...folderOrder,...Object.keys(groups).filter(f=>!folderOrder.includes(f))];
@@ -918,6 +919,24 @@ function renderTree(){
     const arrow=document.createElement('span'); arrow.className='folder-arrow'; arrow.textContent='▼';
     const lbl=document.createElement('span'); lbl.textContent=folder; lbl.style.flex='1';
     hdr.appendChild(arrow); hdr.appendChild(lbl);
+
+    // Allow dropping templates directly onto a folder header
+    hdr.addEventListener('dragover', e => { e.preventDefault(); hdr.style.background = 'var(--sr)'; });
+    hdr.addEventListener('dragleave', () => hdr.style.background = '');
+    hdr.addEventListener('drop', e => {
+      e.preventDefault(); hdr.style.background = '';
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId) return;
+      const userTpls = getUserTemplates();
+      const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
+      if (draggedIdx === -1) return;
+      
+      const [draggedItem] = userTpls.splice(draggedIdx, 1);
+      draggedItem.folder = folder; 
+      userTpls.push(draggedItem); // Move to the end of the new folder
+      saveUserTemplates(userTpls);
+      renderTree();
+    });
 
     if(isUserFolder){
       const ctrl=document.createElement('div'); ctrl.className='fh-ctrl';
@@ -952,59 +971,49 @@ function renderTree(){
       const name=document.createElement('span'); name.className='ti-name'; name.textContent=t.name;
       item.appendChild(dot); item.appendChild(name);
 
+      // --- NEW: HTML5 Native Drag & Drop Behavior ---
+      if (t.isUserTemplate) {
+        item.draggable = true;
+        item.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', t.id);
+          setTimeout(() => item.classList.add('dragging'), 0);
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+      }
+
+      item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+      item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+      
+      item.addEventListener('drop', e => {
+        e.preventDefault(); item.classList.remove('drag-over');
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (!draggedId || draggedId === t.id) return;
+        
+        const userTpls = getUserTemplates();
+        const draggedIdx = userTpls.findIndex(u => u.id === draggedId);
+        if (draggedIdx === -1) return; // Ignore if it's a built-in template
+        
+        const [draggedItem] = userTpls.splice(draggedIdx, 1);
+        draggedItem.folder = t.folder; // Adopt the drop target's folder
+        
+        if (t.isUserTemplate) {
+          // If dropping on a custom template, snap it directly above that template
+          const targetIdx = userTpls.findIndex(u => u.id === t.id);
+          userTpls.splice(targetIdx !== -1 ? targetIdx : 0, 0, draggedItem);
+        } else {
+          // If dropping on a built-in template, just add it to that folder
+          userTpls.push(draggedItem);
+        }
+        
+        saveUserTemplates(userTpls);
+        renderTree();
+      });
+      // ----------------------------------------------
+
       if(t.isUserTemplate){
         const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
-        
-        // Move Up Button
-        const upBtn=document.createElement('button'); upBtn.className='ti-btn'; upBtn.title='Move Up'; upBtn.textContent='↑';
-        upBtn.addEventListener('click',e=>{
-          e.stopPropagation();
-          const templates = getUserTemplates();
-          const idx = templates.findIndex(u => u.id === t.id);
-          let prevIdx = -1;
-          for(let i = idx - 1; i >= 0; i--) { if(templates[i].folder === t.folder) { prevIdx = i; break; } }
-          if(prevIdx !== -1) {
-            [templates[prevIdx], templates[idx]] = [templates[idx], templates[prevIdx]];
-            saveUserTemplates(templates); renderTree();
-          }
-        });
-
-        // Move Down Button
-        const downBtn=document.createElement('button'); downBtn.className='ti-btn'; downBtn.title='Move Down'; downBtn.textContent='↓';
-        downBtn.addEventListener('click',e=>{
-          e.stopPropagation();
-          const templates = getUserTemplates();
-          const idx = templates.findIndex(u => u.id === t.id);
-          let nextIdx = -1;
-          for(let i = idx + 1; i < templates.length; i++) { if(templates[i].folder === t.folder) { nextIdx = i; break; } }
-          if(nextIdx !== -1) {
-            [templates[idx], templates[nextIdx]] = [templates[nextIdx], templates[idx]];
-            saveUserTemplates(templates); renderTree();
-          }
-        });
-
-        // Move to Folder Button
-        const moveBtn=document.createElement('button'); moveBtn.className='ti-btn'; moveBtn.title='Move to Folder'; moveBtn.textContent='📁';
-        moveBtn.addEventListener('click',e=>{
-          e.stopPropagation();
-          const newFolder=prompt('Move to folder (type an existing or new folder name):', t.folder);
-          if(!newFolder?.trim() || newFolder.trim() === t.folder) return;
-          const n = newFolder.trim();
-          const templates = getUserTemplates();
-          const tIdx = templates.findIndex(u => u.id === t.id);
-          if(tIdx !== -1) {
-             templates[tIdx].folder = n;
-             saveUserTemplates(templates);
-             const folders = getUserFolders();
-             // If it's a completely new folder, save it to the folder list too
-             if(!folders.includes(n)) { folders.push(n); saveUserFolders(folders); }
-             renderTree();
-          }
-        });
-
         const editBtn=document.createElement('button'); editBtn.className='ti-btn'; editBtn.title='Edit'; editBtn.textContent='✏';
         editBtn.addEventListener('click',e=>{e.stopPropagation();openBuilder(t);});
-        
         const delBtn=document.createElement('button'); delBtn.className='ti-btn del'; delBtn.title='Delete'; delBtn.textContent='×';
         delBtn.addEventListener('click',e=>{
           e.stopPropagation();
@@ -1013,8 +1022,7 @@ function renderTree(){
           if(curTmpl?.id===t.id){curTmpl=null;document.getElementById('empty-state').style.display='';document.getElementById('fields-container').style.display='none';document.getElementById('out-text').style.display='none';document.getElementById('tmpl-title').textContent='—';updateToolbarButtons();}
           renderTree();
         });
-        
-        ctrl.appendChild(upBtn); ctrl.appendChild(downBtn); ctrl.appendChild(moveBtn); ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
+        ctrl.appendChild(editBtn); ctrl.appendChild(delBtn); item.appendChild(ctrl);
       } else {
         const ctrl=document.createElement('div'); ctrl.className='ti-ctrl';
         const dupeBtn=document.createElement('button'); dupeBtn.className='ti-btn'; dupeBtn.title='Duplicate'; dupeBtn.textContent='⎘';
@@ -1022,14 +1030,14 @@ function renderTree(){
         ctrl.appendChild(dupeBtn); item.appendChild(ctrl);
       }
 
-      // Pass the current fieldValues but wipe specific fields to prevent errors
       item.addEventListener('click', () => {
         closePanel();
         const carryOverValues = { ...fieldValues };
-        delete carryOverValues['their_case_id']; // Prevent mixing up tickets
-        delete carryOverValues['timestamp'];     // Force a fresh timestamp
+        delete carryOverValues['their_case_id']; 
+        delete carryOverValues['timestamp'];     
         loadTemplate(t, carryOverValues);
       });
+      
       kids.appendChild(item);
     });
 
